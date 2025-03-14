@@ -81,7 +81,7 @@ class ShrinkPolicy:
         """The plain policy: shrink to the market moisture, half a point handling."""
         return cls(
             commodity_code=standard.code,
-            target_moisture=Percent.of_points(standard.market_moisture),
+            target_moisture=standard.market_moisture,
             handling_shrink=Percent.of_points("0.5"),
         )
 

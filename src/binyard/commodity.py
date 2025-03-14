@@ -22,6 +22,7 @@ from enum import StrEnum
 from typing import Final
 
 from binyard.errors import UnknownCommodity
+from binyard.percent import Percent
 
 __all__ = [
     "PricingBasis",
@@ -55,9 +56,9 @@ class CropStandard:
     #: Pounds of grain the trade calls one bushel. Fixed by crop, never measured.
     pounds_per_bushel: Decimal
     #: The moisture a contract is priced at.
-    market_moisture: Decimal
+    market_moisture: Percent
     #: Above this the elevator will not take the load at all without drying.
-    receiving_moisture_ceiling: Decimal
+    receiving_moisture_ceiling: Percent
     #: Grain sorghum and every wheat class are graded after dockage is removed.
     dockage_removed_before_grading: bool
     pricing_basis: PricingBasis = PricingBasis.BUSHEL
@@ -67,7 +68,7 @@ class CropStandard:
     def __post_init__(self) -> None:
         if self.pounds_per_bushel <= 0:
             raise ValueError(f"{self.code} needs a positive bushel weight")
-        if not (0 < self.market_moisture < 100):
+        if not (Percent.zero() < self.market_moisture < Percent.of_points(100)):
             raise ValueError(f"{self.code} market moisture is not a percentage")
         if self.receiving_moisture_ceiling <= self.market_moisture:
             raise ValueError(
@@ -87,8 +88,8 @@ CORN: Final = CropStandard(
     code="CORN",
     name="Yellow corn",
     pounds_per_bushel=Decimal("56"),
-    market_moisture=Decimal("15.0"),
-    receiving_moisture_ceiling=Decimal("25.0"),
+    market_moisture=Percent.of_points("15.0"),
+    receiving_moisture_ceiling=Percent.of_points("25.0"),
     dockage_removed_before_grading=False,
     aliases=("YELLOW_CORN", "NO2_YELLOW", "MAIZE"),
 )
@@ -97,8 +98,8 @@ SOYBEANS: Final = CropStandard(
     code="SOYBEANS",
     name="Yellow soybeans",
     pounds_per_bushel=Decimal("60"),
-    market_moisture=Decimal("13.0"),
-    receiving_moisture_ceiling=Decimal("20.0"),
+    market_moisture=Percent.of_points("13.0"),
+    receiving_moisture_ceiling=Percent.of_points("20.0"),
     dockage_removed_before_grading=False,
     aliases=("BEANS", "SOYBEAN", "SOY"),
 )
@@ -107,8 +108,8 @@ HRW_WHEAT: Final = CropStandard(
     code="HRW_WHEAT",
     name="Hard red winter wheat",
     pounds_per_bushel=Decimal("60"),
-    market_moisture=Decimal("13.5"),
-    receiving_moisture_ceiling=Decimal("18.0"),
+    market_moisture=Percent.of_points("13.5"),
+    receiving_moisture_ceiling=Percent.of_points("18.0"),
     dockage_removed_before_grading=True,
     aliases=("HRW", "HARD_RED_WINTER"),
 )
@@ -117,8 +118,8 @@ SRW_WHEAT: Final = CropStandard(
     code="SRW_WHEAT",
     name="Soft red winter wheat",
     pounds_per_bushel=Decimal("60"),
-    market_moisture=Decimal("13.5"),
-    receiving_moisture_ceiling=Decimal("18.0"),
+    market_moisture=Percent.of_points("13.5"),
+    receiving_moisture_ceiling=Percent.of_points("18.0"),
     dockage_removed_before_grading=True,
     aliases=("SRW", "SOFT_RED_WINTER"),
 )
@@ -127,8 +128,8 @@ GRAIN_SORGHUM: Final = CropStandard(
     code="GRAIN_SORGHUM",
     name="Grain sorghum",
     pounds_per_bushel=Decimal("56"),
-    market_moisture=Decimal("14.0"),
-    receiving_moisture_ceiling=Decimal("20.0"),
+    market_moisture=Percent.of_points("14.0"),
+    receiving_moisture_ceiling=Percent.of_points("20.0"),
     dockage_removed_before_grading=True,
     aliases=("MILO", "SORGHUM"),
 )
@@ -137,8 +138,8 @@ OATS: Final = CropStandard(
     code="OATS",
     name="Oats",
     pounds_per_bushel=Decimal("32"),
-    market_moisture=Decimal("14.0"),
-    receiving_moisture_ceiling=Decimal("18.0"),
+    market_moisture=Percent.of_points("14.0"),
+    receiving_moisture_ceiling=Percent.of_points("18.0"),
     dockage_removed_before_grading=True,
     aliases=("OAT",),
 )
@@ -147,8 +148,8 @@ SUNFLOWER: Final = CropStandard(
     code="SUNFLOWER",
     name="Oil type sunflower",
     pounds_per_bushel=Decimal("25"),
-    market_moisture=Decimal("10.0"),
-    receiving_moisture_ceiling=Decimal("18.0"),
+    market_moisture=Percent.of_points("10.0"),
+    receiving_moisture_ceiling=Percent.of_points("18.0"),
     dockage_removed_before_grading=True,
     pricing_basis=PricingBasis.HUNDREDWEIGHT,
     aliases=("SUNFLOWERS", "SUNS", "OIL_SUNFLOWER"),
