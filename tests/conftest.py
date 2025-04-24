@@ -14,10 +14,12 @@ from decimal import Decimal
 import pytest
 
 from binyard import commodity
+from binyard.bushels import bushels
 from binyard.commodity import CropStandard
 from binyard.discounts.posted import default_book
 from binyard.grading.factors import FactorSample
 from binyard.identity import LocationCode, Sequence, TicketNumber
+from binyard.inventory import Bin, BinKind, Yard
 from binyard.percent import Percent, percent
 from binyard.shrink import ShrinkPolicy
 from binyard.tickets import ScaleTicket, ScaleWeights, TicketKind
@@ -103,3 +105,18 @@ def corn_policy():
 @pytest.fixture
 def full_load() -> Weight:
     return pounds("48240")
+
+
+def bin_for(identifier: str = "N1", capacity: str = "120000", **overrides) -> Bin:
+    fields: dict[str, object] = {
+        "identifier": identifier,
+        "name": f"Bin {identifier}",
+        "kind": BinKind.UPRIGHT,
+        "capacity": bushels(capacity),
+    }
+    fields.update(overrides)
+    return Bin(**fields)  # type: ignore[arg-type]
+
+
+def yard_with(*identifiers: str, capacity: str = "120000") -> Yard:
+    return Yard(bins=tuple(bin_for(name, capacity=capacity) for name in identifiers))
