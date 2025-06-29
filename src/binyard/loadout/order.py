@@ -4,12 +4,16 @@ An order is for a quantity against a destination. What actually leaves the yard
 is a list of loads, each on a carrier that can legally hold it and each drawn
 from bins that keep the running average inside the spec.
 
-Splitting an order into loads is not division. The last load is short unless
-the arithmetic is lucky, and a load under a floor is worse than useless because
-a truck sent out a quarter full costs the same to run as a full one. So the
-splitter builds full loads and then decides what to do with the tail: roll it
-into the previous load if the carrier will take it, or ship it on its own if it
-clears the floor, or leave it in the bin and say so.
+Splitting an order into loads is not division. Filling each carrier to the brim
+in turn leaves a tail, and the tail is usually small: three full trucks and one
+carrying two hundred bushels. That last truck costs the same to run as a full
+one, so the splitter works out how many carriers are actually needed and then
+levels the quantity across them. Four trucks each carrying five hundred beats
+three full and one nearly empty, and the loader does not care.
+
+Levelling can still fail. If the order needs every carrier and the even share
+is under the floor, there is nothing to redistribute and the caller is told
+rather than being handed a plan that sends a truck out a quarter full.
 
 The order tracks what has shipped against it and refuses to over ship, which is
 the same tolerance idea as a purchase contract and deliberately not the same
@@ -209,17 +213,19 @@ def split_into_loads(
     if not carriers:
         raise LoadoutError("no carrier was offered")
 
-    planned: list[tuple[str, Bushels]] = []
+    usable = [
+        (carrier, capacity_bushels(carrier, standard))
+        for carrier in carriers
+        if capacity_bushels(carrier, standard).is_positive()
+    ]
+
+    needed: list[tuple[Carrier, Bushels]] = []
     left = quantity
-    for carrier in carriers:
+    for carrier, capacity in usable:
         if not left.is_positive():
             break
-        capacity = capacity_bushels(carrier, standard)
-        if not capacity.is_positive():
-            continue
-        take = min(left, capacity)
-        planned.append((carrier.identifier, take))
-        left = left - take
+        needed.append((carrier, capacity))
+        left = left - min(left, capacity)
 
     if left.is_positive():
         raise LoadoutError(
@@ -228,20 +234,49 @@ def split_into_loads(
             short=str(left),
         )
 
-    if len(planned) > 1 and planned[-1][1] < minimum_load:
-        tail_identifier, tail = planned[-1]
-        previous_identifier, previous = planned[-2]
-        room = capacity_bushels(
-            next(c for c in carriers if c.identifier == previous_identifier), standard
-        ) - previous
-        if room >= tail:
-            planned = planned[:-1]
-            planned[-1] = (previous_identifier, previous + tail)
-        else:
-            raise LoadoutError(
-                "the tail load is under the minimum and will not roll back",
-                tail=str(tail),
-                minimum=str(minimum_load),
-                carrier=tail_identifier,
-            )
-    return tuple(planned)
+    planned = _level(quantity, needed)
+    smallest = min(amount for _, amount in planned)
+    if smallest < minimum_load:
+        raise LoadoutError(
+            "the order cannot be levelled above the minimum load",
+            smallest=str(smallest),
+            minimum=str(minimum_load),
+            carriers=len(planned),
+        )
+    return planned
+
+
+def _level(
+    quantity: Bushels, carriers: list[tuple[Carrier, Bushels]]
+) -> tuple[tuple[str, Bushels], ...]:
+    """Spread ``quantity`` across the carriers in proportion to their capacity.
+
+    Anything a carrier cannot take spills forward to the next one, so a mixed
+    fleet still comes out legal. The remainder hundredths land on the first
+    carriers, which keeps the answer stable for the same input.
+    """
+    total_capacity = Bushels.zero()
+    for _, capacity in carriers:
+        total_capacity = total_capacity + capacity
+
+    shares: list[int] = []
+    for _, capacity in carriers:
+        shares.append(quantity.hundredths * capacity.hundredths // total_capacity.hundredths)
+    remainder = quantity.hundredths - sum(shares)
+    for index in range(remainder):
+        shares[index % len(shares)] += 1
+
+    spill = 0
+    for index, (_, capacity) in enumerate(carriers):
+        shares[index] += spill
+        spill = 0
+        if shares[index] > capacity.hundredths:
+            spill = shares[index] - capacity.hundredths
+            shares[index] = capacity.hundredths
+    if spill:  # pragma: no cover - the caller already proved the fleet fits
+        raise LoadoutError("levelling spilled past the last carrier", short=spill)
+
+    return tuple(
+        (carrier.identifier, Bushels(amount))
+        for (carrier, _), amount in zip(carriers, shares, strict=True)
+    )
