@@ -9,13 +9,16 @@ from binyard.store.protocol import (
     UnitOfWork,
     YardStore,
 )
+from binyard.store.sqlite import SqliteUnitOfWork, connect
 
 __all__ = [
     "ContractStore",
     "MemoryUnitOfWork",
     "ObligationStore",
     "SettlementStore",
+    "SqliteUnitOfWork",
     "TicketStore",
     "UnitOfWork",
     "YardStore",
+    "connect",
 ]
