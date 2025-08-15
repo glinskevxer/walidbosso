@@ -248,7 +248,7 @@ class MemoryUnitOfWork:
         self.settlements = MemorySettlementStore()
         self.yard = MemoryYardStore(yard)
         self.committed = 0
-        self._snapshot: dict[str, Any] | None = None
+        self._snapshot: dict[str, Any] = self._take()
 
     def _stores(self) -> dict[str, Any]:
         return {
@@ -259,23 +259,27 @@ class MemoryUnitOfWork:
             "yard": self.yard,
         }
 
+    def _take(self) -> dict[str, Any]:
+        return {name: store.snapshot() for name, store in self._stores().items()}
+
     def __enter__(self) -> MemoryUnitOfWork:
-        self._snapshot = {
-            name: store.snapshot() for name, store in self._stores().items()
-        }
         return self
 
     def __exit__(self, *exception: Any) -> None:
-        if self._snapshot is not None:
-            self.rollback()
+        self.rollback()
 
     def commit(self) -> None:
-        self._snapshot = None
+        """Make the current state the one a later rollback returns to."""
+        self._snapshot = self._take()
         self.committed += 1
 
     def rollback(self) -> None:
-        if self._snapshot is None:
-            return
+        """Throw away everything written since the last commit.
+
+        The snapshot is taken at construction and refreshed on every commit,
+        not on entering a context manager. A service that rolls back without
+        ever having used ``with`` still gets its writes undone, which is what
+        the SQL backend does and therefore what the protocol has to mean.
+        """
         for name, store in self._stores().items():
             store.restore(self._snapshot[name])
-        self._snapshot = None
