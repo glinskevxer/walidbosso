@@ -20,13 +20,13 @@ from datetime import date
 from typing import TextIO
 
 from binyard import __version__
-from binyard.cli.commands import bins, blend, migrate, receive
+from binyard.cli.commands import bins, blend, migrate, receive, report
 from binyard.cli.context import Context, OutputFormat, build_context
 from binyard.errors import BinyardError
 
 __all__ = ["build_parser", "run", "main"]
 
-_COMMANDS = (migrate, bins, receive, blend)
+_COMMANDS = (migrate, bins, receive, blend, report)
 
 
 def build_parser() -> argparse.ArgumentParser:
