@@ -64,6 +64,7 @@ from binyard.store.mappers import (
     weights_to_row,
 )
 from binyard.store.migrate import migrate
+from binyard.store.orders import SqliteOrderStore
 from binyard.tickets.ticket import ScaleTicket, TicketKind, TicketStatus
 
 __all__ = ["connect", "SqliteUnitOfWork"]
@@ -626,6 +627,7 @@ class SqliteUnitOfWork:
         self.obligations = SqliteObligationStore(connection)
         self.contracts = SqliteContractStore(connection)
         self.settlements = SqliteSettlementStore(connection)
+        self.orders = SqliteOrderStore(connection)
         self.yard = SqliteYardStore(connection)
 
     @classmethod

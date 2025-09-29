@@ -30,6 +30,7 @@ from binyard.identity import TicketNumber
 from binyard.inventory.yard import Yard
 from binyard.obligations.obligation import StorageObligation
 from binyard.settlement.statement import Settlement
+from binyard.store.orders import OrderStore
 from binyard.tickets.ticket import ScaleTicket
 
 __all__ = [
@@ -37,6 +38,7 @@ __all__ = [
     "ObligationStore",
     "ContractStore",
     "SettlementStore",
+    "OrderStore",
     "YardStore",
     "UnitOfWork",
 ]
@@ -141,6 +143,7 @@ class UnitOfWork(Protocol):
     obligations: ObligationStore
     contracts: ContractStore
     settlements: SettlementStore
+    orders: OrderStore
     yard: YardStore
 
     def __enter__(self) -> UnitOfWork: ...

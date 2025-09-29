@@ -12,9 +12,9 @@ and that is deliberate. The blend that was planned on Monday is not the blend
 the yard supports on Thursday, and quietly re-planning under the operator would
 mean the paperwork in their hand and the grain in the truck disagree.
 
-Orders are held in this module for now, which means they do not survive the
-process. That is fine for a single shell session and wrong for anything else,
-and it is the next thing to fix here.
+Orders live in the store, so an order written in one invocation is there for
+the next one. That was not true when this command was first written and it cost
+an afternoon.
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ from binyard.bushels import bushels
 from binyard.cli.commands.blend import build_spec
 from binyard.cli.context import Context
 from binyard.commodity import lookup
-from binyard.errors import NotFound, ValidationError
+from binyard.errors import ValidationError
 from binyard.identity import Sequence, crop_year_of
 from binyard.loadout.carrier import AxleConfiguration, Carrier, CarrierKind
 from binyard.loadout.order import LoadoutOrder
@@ -37,8 +37,6 @@ from binyard.services.shipping import ShipmentRequest, plan_shipment, ship_next_
 from binyard.units import parse_weight
 
 __all__ = ["register"]
-
-_ORDERS: dict[str, LoadoutOrder] = {}
 
 
 def register(subparsers: argparse._SubParsersAction) -> None:
@@ -105,19 +103,20 @@ def _order(context: Context, arguments: argparse.Namespace) -> int:
         ship_from=date.fromisoformat(arguments.ship_from),
         ship_to=date.fromisoformat(arguments.ship_to),
     )
-    _ORDERS[order.identifier] = order
+    work = context.work()
+    work.orders.add(order)
+    work.commit()
     context.emit(_order_table(order))
     return 0
 
 
 def _plan(context: Context, arguments: argparse.Namespace) -> int:
     standard = lookup(arguments.crop)
-    order = _ORDERS.get(arguments.identifier)
-    if order is None:
-        raise NotFound("order", arguments.identifier)
+    work = context.work()
+    order = work.orders.get(arguments.identifier)
     spec = build_spec(arguments, standard.code)
     shipment = plan_shipment(
-        context.work(),
+        work,
         ShipmentRequest(
             order=order,
             spec=spec,
@@ -144,15 +143,13 @@ def _plan(context: Context, arguments: argparse.Namespace) -> int:
 
 def _load(context: Context, arguments: argparse.Namespace) -> int:
     standard = lookup(arguments.crop)
-    order = _ORDERS.get(arguments.identifier)
-    if order is None:
-        raise NotFound("order", arguments.identifier)
+    work = context.work()
+    order = work.orders.get(arguments.identifier)
     draws = tuple(_draw(text) for text in arguments.draws)
     quantity = bushels(0)
     for _, amount in draws:
         quantity = quantity + amount
     carrier = _carrier(arguments.carrier)
-    work = context.work()
     moved, ticket = ship_next_load(
         work,
         Sequence(context.settings.location, crop_year_of(context.on)),
@@ -165,7 +162,8 @@ def _load(context: Context, arguments: argparse.Namespace) -> int:
         at=datetime.combine(context.on, datetime.now().time()),
         by="cli",
     )
-    _ORDERS[order.identifier] = moved
+    work.orders.replace(moved)
+    work.commit()
     context.emit(_order_table(moved))
     context.say(f"ticket {ticket.number} on {carrier.identifier}")
     return 0
