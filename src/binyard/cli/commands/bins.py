@@ -68,7 +68,7 @@ def handle_list(context: Context, arguments: argparse.Namespace) -> int:
 
 def handle_show(context: Context, arguments: argparse.Namespace) -> int:
     work = context.work()
-    state = work.yard.state_of(arguments.identifier)
+    state = work.yard.load().state_of(arguments.identifier)
     described = state.describe()
     contents = described["contents"]
     quality = contents["quality"] or {}
