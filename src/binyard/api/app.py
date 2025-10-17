@@ -44,10 +44,10 @@ def create_app(
     resolved = settings or load_settings()
     factory = connections or _factory_for(resolved)
 
-    from binyard.api.routes import health
+    from binyard.api.routes import health, tickets
 
     routes: list[Route] = []
-    for module in (health,):
+    for module in (health, tickets):
         routes.extend(module.routes())
 
     middleware = [
@@ -77,12 +77,20 @@ def create_app(
 
 
 def _factory_for(settings: Settings) -> ConnectionFactory:
+    """One connection per request, against the configured file.
+
+    Migrations run once here rather than on every connection. Opening a
+    connection is cheap; checking a migration ledger on every request is not,
+    and doing it under load is how a deploy discovers its own lock contention.
+    """
     from binyard.cli.context import database_path
 
     where = database_path(settings.database_url)
+    opened = connect(where)
+    opened.close()
 
     def factory() -> sqlite3.Connection:
-        return connect(where)
+        return connect(where, run_migrations=False)
 
     return factory
 
