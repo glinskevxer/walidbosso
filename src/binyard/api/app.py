@@ -44,10 +44,10 @@ def create_app(
     resolved = settings or load_settings()
     factory = connections or _factory_for(resolved)
 
-    from binyard.api.routes import health, tickets, yard
+    from binyard.api.routes import blend, health, reports, tickets, yard
 
     routes: list[Route] = []
-    for module in (health, tickets, yard):
+    for module in (health, tickets, yard, blend, reports):
         routes.extend(module.routes())
 
     middleware = [
