@@ -21,7 +21,7 @@ find it.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any, TypeVar
 
@@ -118,6 +118,17 @@ class Reader:
         except ValueError as exc:
             raise ValidationError(
                 "expected a date as YYYY-MM-DD", field=self._where(name), got=repr(value)
+            ) from exc
+
+    def timestamp(self, name: str, default: Any = _MISSING) -> datetime:
+        value = self._raw(name, default)
+        if isinstance(value, datetime):
+            return value
+        try:
+            return datetime.fromisoformat(str(value))
+        except ValueError as exc:
+            raise ValidationError(
+                "expected an ISO timestamp", field=self._where(name), got=repr(value)
             ) from exc
 
     def choice(self, name: str, options: type[T], default: Any = _MISSING) -> T:
