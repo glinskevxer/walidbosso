@@ -40,7 +40,7 @@ from binyard.errors import (
 from binyard.grading.factors import FactorSample, Odor
 from binyard.percent import Percent
 
-__all__ = ["BinKind", "Bin", "BinContents", "commingle"]
+__all__ = ["BinKind", "Bin", "BinContents", "commingle", "commingle_many"]
 
 _ODOR_SEVERITY: dict[Odor, int] = {
     Odor.NONE: 0,
@@ -186,39 +186,57 @@ class BinContents:
         }
 
 
-def commingle(
-    left: tuple[FactorSample, int], right: tuple[FactorSample, int]
-) -> FactorSample:
-    """Bushel weight two samples into one, taking the worst of what cannot average."""
-    first, first_weight = left
-    second, second_weight = right
-    total = first_weight + second_weight
+_BLENDED = (
+    "moisture",
+    "total_damage",
+    "heat_damage",
+    "foreign_material",
+    "broken",
+    "dockage",
+    "other_classes",
+    "shrunken_broken",
+)
+
+
+def commingle_many(lots: list[tuple[FactorSample, int]]) -> FactorSample:
+    """Bushel weight any number of samples into one, in a single rounding.
+
+    Folding pairwise instead would round at every step, and a blend drawn from
+    eight bins can accumulate enough of that to report a hundredth of a point
+    over a ceiling the true average is under. One pass, one rounding.
+    """
+    if not lots:
+        raise ValidationError("cannot commingle nothing with nothing")
+    total = sum(weight for _, weight in lots)
     if total <= 0:
         raise ValidationError("cannot commingle nothing with nothing")
 
     def blend(attribute: str) -> Percent:
-        one: Percent = getattr(first, attribute)
-        two: Percent = getattr(second, attribute)
         mixed = (
-            Decimal(one.hundredths) * first_weight + Decimal(two.hundredths) * second_weight
-        ) / total
+            sum(
+                Decimal(getattr(sample, attribute).hundredths) * weight
+                for sample, weight in lots
+            )
+            / total
+        )
         return Percent(int(mixed.quantize(Decimal("1"), rounding=ROUND_HALF_UP)))
 
     test_weight = (
-        first.test_weight * first_weight + second.test_weight * second_weight
-    ) / total
-
-    worst_odor = max((first.odor, second.odor), key=lambda odor: _ODOR_SEVERITY[odor])
-    return FactorSample(
-        moisture=blend("moisture"),
-        test_weight=test_weight.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP),
-        total_damage=blend("total_damage"),
-        heat_damage=blend("heat_damage"),
-        foreign_material=blend("foreign_material"),
-        broken=blend("broken"),
-        dockage=blend("dockage"),
-        other_classes=blend("other_classes"),
-        shrunken_broken=blend("shrunken_broken"),
-        odor=worst_odor,
-        infested=first.infested or second.infested,
+        sum(sample.test_weight * weight for sample, weight in lots) / total
     )
+    worst_odor = max(
+        (sample.odor for sample, _ in lots), key=lambda odor: _ODOR_SEVERITY[odor]
+    )
+    return FactorSample(
+        **{name: blend(name) for name in _BLENDED},
+        test_weight=test_weight.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP),
+        odor=worst_odor,
+        infested=any(sample.infested for sample, _ in lots),
+    )
+
+
+def commingle(
+    left: tuple[FactorSample, int], right: tuple[FactorSample, int]
+) -> FactorSample:
+    """Bushel weight two samples into one, taking the worst of what cannot average."""
+    return commingle_many([left, right])

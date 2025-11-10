@@ -20,8 +20,20 @@ without those bins. It repeats until the answer is clean or there is nothing
 left to drop. That terminates because each pass removes at least one bin.
 
 **Bushels are not continuous.** The solver works in exact rationals and the
-draw list has to be hundredths. Rounding each draw independently would miss the
-order by a few hundredths, so the largest draw absorbs the difference.
+draw list has to be hundredths. Two things follow and both were found by a
+property test rather than by thinking about it.
+
+Rounding has to be largest remainder. Truncating and dumping the difference on
+the biggest draw can push that bin past what it holds, which the solver had
+explicitly forbidden.
+
+And the spec rows have to be tightened before solving. A vertex can sit exactly
+on a ceiling, and rounding each draw by up to a hundredth then moves the
+average a hair over it. Each row is therefore tightened by the sum of the
+absolute values of its own coefficients, which is exactly the most that
+rounding every variable by less than one can move it. The tightening is a few
+parts per million on a real order and it makes the rounded answer provably
+inside the spec rather than nearly always inside it.
 """
 
 from __future__ import annotations
@@ -36,7 +48,7 @@ from binyard.blend.spec import BlendSource, BlendSpec, SpecLimit
 from binyard.bushels import Bushels
 from binyard.errors import InfeasibleBlend, ValidationError
 from binyard.grading.factors import FactorSample
-from binyard.inventory.bin import commingle
+from binyard.inventory.bin import commingle_many
 
 __all__ = ["Objective", "Draw", "BlendPlan", "plan_blend"]
 
@@ -200,11 +212,14 @@ def _solve_for(
             Fraction(source.reading(limit.factor)) - Fraction(limit.limit)
             for source in sources
         )
+        # See the module docstring: tightening by the row's own weight is the
+        # exact bound on how far rounding every draw can move the average.
+        slack = sum((abs(value) for value in coefficients), Fraction(0))
         rows.append(
             Constraint(
                 coefficients=coefficients,
                 sense=Sense.GE if limit.is_minimum else Sense.LE,
-                rhs=Fraction(0),
+                rhs=slack if limit.is_minimum else -slack,
             )
         )
 
@@ -249,28 +264,31 @@ def _defect_score(spec: BlendSpec, source: BlendSource) -> Fraction:
 def _to_draws(
     sources: list[BlendSource], values: tuple[Fraction, ...], wanted: Bushels
 ) -> list[Draw]:
-    hundredths = [int(value) for value in values]
-    shortfall = wanted.hundredths - sum(hundredths)
-    if shortfall:
-        widest = max(range(len(hundredths)), key=lambda i: hundredths[i])
-        hundredths[widest] += shortfall
+    """Round the exact answer to hundredths, largest remainder first.
+
+    Every draw ends up at the floor or one hundredth above it, so no bin is
+    asked for more than it holds and no draw is more than a hundredth away from
+    what the solver said.
+    """
+    floors = [value.numerator // value.denominator for value in values]
+    remainders = [value - floor for value, floor in zip(values, floors, strict=True)]
+    shortfall = wanted.hundredths - sum(floors)
+    order = sorted(
+        range(len(values)), key=lambda index: (-remainders[index], index)
+    )
+    for index in order[: max(shortfall, 0)]:
+        floors[index] += 1
     return [
         Draw(identifier=source.identifier, quantity=Bushels(amount))
-        for source, amount in zip(sources, hundredths, strict=True)
+        for source, amount in zip(sources, floors, strict=True)
     ]
 
 
 def _blended_quality(sources: list[BlendSource], draws: tuple[Draw, ...]) -> FactorSample:
     by_identifier = {source.identifier: source for source in sources}
-    running: FactorSample | None = None
-    weight = 0
-    for draw in draws:
-        source = by_identifier[draw.identifier]
-        if running is None:
-            running = source.quality
-            weight = draw.quantity.hundredths
-            continue
-        running = commingle((running, weight), (source.quality, draw.quantity.hundredths))
-        weight += draw.quantity.hundredths
-    assert running is not None
-    return running
+    return commingle_many(
+        [
+            (by_identifier[draw.identifier].quality, draw.quantity.hundredths)
+            for draw in draws
+        ]
+    )

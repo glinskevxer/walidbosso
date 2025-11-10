@@ -61,6 +61,15 @@ class Assessment:
 
     @property
     def total_rate(self) -> Price:
+        """The rates added up, in cents per bushel.
+
+        Extending this over the quantity does **not** always give
+        :attr:`total`. Every line is rounded to the cent as it is printed, and
+        the sum of rounded lines can differ from the rounded sum by a cent per
+        line. :attr:`total` is what is charged, because it is what adds up on
+        the stub; this figure is for the one line a grower reads to compare
+        against the board.
+        """
         total = Price.zero()
         for line in self.lines:
             total = total + line.rate
@@ -68,6 +77,7 @@ class Assessment:
 
     @property
     def total(self) -> Money:
+        """What is actually charged: the printed lines, added up."""
         total = Money.zero()
         for line in self.lines:
             total = total + line.amount

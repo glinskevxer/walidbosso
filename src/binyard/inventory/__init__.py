@@ -1,6 +1,6 @@
 """Bins, what is in them, and the record of everything that moved."""
 
-from binyard.inventory.bin import Bin, BinContents, BinKind, commingle
+from binyard.inventory.bin import Bin, BinContents, BinKind, commingle, commingle_many
 from binyard.inventory.ledger import Ledger, Movement, MovementKind
 from binyard.inventory.yard import BinState, Yard
 
@@ -14,4 +14,5 @@ __all__ = [
     "MovementKind",
     "Yard",
     "commingle",
+    "commingle_many",
 ]

@@ -252,7 +252,20 @@ class TestAssessing:
         )
         found = assess(result, bushels("1000"), CORN_SCHEDULE)
         assert len(found.lines) >= 2
-        assert found.total == found.total_rate.extend(bushels("1000"))
+        running = Money.zero()
+        for line in found.lines:
+            running = running + line.amount
+        assert found.total == running
+
+    def test_the_summed_rate_can_differ_from_the_charge_by_the_rounding(self):
+        # Each line is rounded to the cent as it prints, so the sum of the
+        # rounded lines and the rounded sum need not agree on a small load.
+        result = determine(
+            corn_sample(moisture=percent("18.0"), broken=percent("5.0")), commodity.CORN
+        )
+        found = assess(result, bushels("0.01"), CORN_SCHEDULE)
+        gap = abs(found.total.cents - found.total_rate.extend(bushels("0.01")).cents)
+        assert gap <= len(found.lines)
 
     def test_a_rejecting_reading_stops_everything(self):
         result = determine(corn_sample(moisture=percent("26.0")), commodity.CORN)
