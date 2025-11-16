@@ -1,0 +1,32 @@
+# A single service and a named volume. There is no database container because
+# the database is a file, and putting a file behind a network hop would be the
+# wrong trade for a one building operation.
+
+services:
+  binyard:
+    build:
+      context: .
+      target: runtime
+    image: binyard:local
+    environment:
+      BINYARD_LOCATION: WBS
+      BINYARD_LOCATION_NAME: West Branch Station
+      BINYARD_HOUSE_NAME: West Branch Grain
+      BINYARD_DATABASE_URL: sqlite:////var/lib/binyard/binyard.sqlite3
+      BINYARD_LOG_LEVEL: INFO
+      BINYARD_WORKERS: "2"
+      # Set BINYARD_API_KEY here to require a key on everything but the probes.
+    ports:
+      - "8000:8000"
+    volumes:
+      - grain:/var/lib/binyard
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).status == 200 else 1)"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  grain:
