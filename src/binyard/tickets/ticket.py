@@ -34,7 +34,7 @@ from binyard.identity import TicketNumber
 from binyard.shrink import ShrinkPolicy, ShrinkResult, apply_shrink
 from binyard.tickets.weights import ScaleWeights
 
-__all__ = ["TicketKind", "TicketStatus", "TicketEvent", "ScaleTicket"]
+__all__ = ["ScaleTicket", "TicketEvent", "TicketKind", "TicketStatus"]
 
 
 class TicketKind(StrEnum):
@@ -149,9 +149,7 @@ class ScaleTicket:
                 attempted=status.value,
             )
         event = TicketEvent(at=at, became=status, by=by, note=note)
-        return replace(
-            self, status=status, history=(*self.history, event), **changes
-        )
+        return replace(self, status=status, history=(*self.history, event), **changes)
 
     def graded_as(
         self,
@@ -203,9 +201,7 @@ class ScaleTicket:
     def voided(self, reason: str, *, at: datetime, by: str) -> ScaleTicket:
         if not reason.strip():
             raise ValidationError("voiding a ticket needs a reason", number=str(self.number))
-        return self._moved(
-            TicketStatus.VOID, at, by, reason, void_reason=reason.strip()
-        )
+        return self._moved(TicketStatus.VOID, at, by, reason, void_reason=reason.strip())
 
     def corrected_by(
         self, number: TicketNumber, reason: str, *, at: datetime, by: str
@@ -218,9 +214,7 @@ class ScaleTicket:
         net the pair instead of double counting them.
         """
         if number == self.number:
-            raise ValidationError(
-                "a correction needs a new number", number=str(self.number)
-            )
+            raise ValidationError("a correction needs a new number", number=str(self.number))
         void = self.voided(f"corrected by {number}: {reason}", at=at, by=by)
         replacement = ScaleTicket(
             number=number,

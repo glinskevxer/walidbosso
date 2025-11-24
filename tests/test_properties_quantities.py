@@ -44,7 +44,7 @@ class TestWeightLaws:
 
     @given(weights)
     def test_negation_is_its_own_inverse(self, one):
-        assert -(-one) == one
+        assert -(-one) == one  # noqa: B002
 
     @given(weights)
     def test_the_pounds_view_round_trips(self, one):
@@ -160,7 +160,4 @@ class TestShrinkLaws:
     def test_wetter_never_nets_more(self, gross, one, two, standard):
         policy = ShrinkPolicy.market_default(standard)
         drier, wetter = Percent(min(one, two)), Percent(max(one, two))
-        assert (
-            apply_shrink(gross, wetter, policy).net
-            <= apply_shrink(gross, drier, policy).net
-        )
+        assert apply_shrink(gross, wetter, policy).net <= apply_shrink(gross, drier, policy).net

@@ -15,9 +15,10 @@ all.
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
-from typing import Final, Mapping
+from typing import Final
 
 from binyard.errors import ConfigurationError
 from binyard.identity import LocationCode, crop_year_of
@@ -25,7 +26,7 @@ from binyard.money import Money, Price
 from binyard.obligations.storage import Accrual, StorageTerms
 from binyard.percent import Percent
 
-__all__ = ["Settings", "load_settings", "PREFIX"]
+__all__ = ["PREFIX", "Settings", "load_settings"]
 
 PREFIX: Final = "BINYARD_"
 
@@ -93,9 +94,7 @@ class Settings:
         }
 
 
-def load_settings(
-    environment: Mapping[str, str] | None = None, *, today=None
-) -> Settings:
+def load_settings(environment: Mapping[str, str] | None = None, *, today=None) -> Settings:
     """Read settings out of the environment, falling back to sane defaults."""
     source = os.environ if environment is None else environment
     read = _Reader(source)
@@ -179,9 +178,7 @@ class _Reader:
             return True
         if lowered in {"0", "false", "no", "off"}:
             return False
-        raise ConfigurationError(
-            "expected a yes or a no", variable=PREFIX + name, got=raw
-        )
+        raise ConfigurationError("expected a yes or a no", variable=PREFIX + name, got=raw)
 
     def csv(self, name: str) -> tuple[str, ...]:
         raw = self._raw(name)

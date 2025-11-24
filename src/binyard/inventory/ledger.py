@@ -31,7 +31,7 @@ from binyard.bushels import Bushels
 from binyard.errors import ValidationError
 from binyard.grading.factors import FactorSample
 
-__all__ = ["MovementKind", "Movement", "Ledger"]
+__all__ = ["Ledger", "Movement", "MovementKind"]
 
 
 class MovementKind(StrEnum):
@@ -154,9 +154,7 @@ class Ledger:
         return Ledger(entries=self.entries[:index])
 
     def for_bin(self, identifier: str) -> Ledger:
-        return Ledger(
-            entries=tuple(e for e in self.entries if e.bin_identifier == identifier)
-        )
+        return Ledger(entries=tuple(e for e in self.entries if e.bin_identifier == identifier))
 
     def for_reference(self, reference: str) -> Ledger:
         return Ledger(entries=tuple(e for e in self.entries if e.reference == reference))

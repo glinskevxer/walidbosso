@@ -114,7 +114,9 @@ class TestCapacity:
         assert not fits(truck(), commodity.CORN, bushels("876"))
 
     def test_the_check_renders(self):
-        described = capacity_for(truck(volume_cubic_feet=Decimal("1100")), commodity.OATS).describe()
+        described = capacity_for(
+            truck(volume_cubic_feet=Decimal("1100")), commodity.OATS
+        ).describe()
         assert described["binding"] == "volume"
         assert described["commodity"] == "OATS"
 
@@ -224,9 +226,7 @@ class TestSplitting:
 
     def test_a_mixed_fleet_never_gets_more_than_it_can_hold(self):
         small = truck("SMALL", empty="55000")
-        planned = split_into_loads(
-            bushels("1200"), [small, truck("BIG")], commodity.CORN
-        )
+        planned = split_into_loads(bushels("1200"), [small, truck("BIG")], commodity.CORN)
         by_name = dict(planned)
         assert by_name["SMALL"] <= capacity_bushels(small, commodity.CORN)
         total = bushels("0")

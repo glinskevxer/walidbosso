@@ -12,11 +12,15 @@ from binyard.discounts import (
     FactorSchedule,
     GradeSchedule,
     PostedSchedule,
-    ScheduleBook,
     assess,
 )
 from binyard.discounts.posted import CORN_SCHEDULE, SEASON_START, default_book
-from binyard.errors import ConfigurationError, NoScheduleInEffect, ScheduleError, ValidationError
+from binyard.errors import (
+    ConfigurationError,
+    NoScheduleInEffect,
+    ScheduleError,
+    ValidationError,
+)
 from binyard.grading import FactorName, FactorSample, determine
 from binyard.money import Money, Price, dollars
 from binyard.percent import percent
@@ -86,9 +90,7 @@ class TestBandValidation:
 
     def test_test_weight_cannot_use_this_shape(self):
         with pytest.raises(ConfigurationError):
-            FactorSchedule(
-                FactorName.TEST_WEIGHT, (Band(Decimal("54"), None, cents("3")),)
-            )
+            FactorSchedule(FactorName.TEST_WEIGHT, (Band(Decimal("54"), None, cents("3")),))
 
 
 class TestRates:

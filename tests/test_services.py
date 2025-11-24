@@ -2,7 +2,6 @@ from datetime import date, datetime
 from decimal import Decimal
 
 import pytest
-from conftest import LOCATION, bin_for, sample_for, weights_for
 
 from binyard import commodity
 from binyard.blend import BlendSpec, SpecLimit
@@ -10,6 +9,7 @@ from binyard.bushels import bushels
 from binyard.contracts import PriceKind, PurchaseContract
 from binyard.discounts.posted import default_book
 from binyard.errors import (
+    BinCapacityExceeded,
     InsufficientInventory,
     LoadoutError,
     TicketError,
@@ -40,6 +40,7 @@ from binyard.settlement import Checkoff
 from binyard.store import MemoryUnitOfWork
 from binyard.tickets import TareSource, TicketStatus
 from binyard.units import pounds
+from conftest import LOCATION, bin_for, sample_for, weights_for
 
 DAY = date(2025, 10, 14)
 NOON = datetime(2025, 10, 14, 12, 0)
@@ -150,7 +151,7 @@ class TestReceiving:
         small = bin_for("SMALL", capacity="100")
         work.yard.save(work.yard.load().with_bin(small))
         work.commit()
-        with pytest.raises(Exception):
+        with pytest.raises(BinCapacityExceeded):
             receive_load(work, numbers, request_for(bin_identifier="SMALL"), book=BOOK)
         assert work.tickets.open_tickets() == ()
 
@@ -312,9 +313,7 @@ class TestShipping:
         first = receive_load(work, numbers, request_for(), book=BOOK)
         receive_load(work, numbers, request_for(), book=BOOK)
         assert first.obligation is not None
-        work.obligations.replace(
-            work.obligations.get(first.obligation.identifier).cancelled()
-        )
+        work.obligations.replace(work.obligations.get(first.obligation.identifier).cancelled())
         work.commit()
         with pytest.raises(InsufficientInventory) as caught:
             ship_next_load(

@@ -14,9 +14,9 @@ from binyard.discounts.schedule import (
 __all__ = [
     "Accumulation",
     "Assessment",
-    "DiscountLine",
     "Band",
     "Basis",
+    "DiscountLine",
     "FactorSchedule",
     "GradeSchedule",
     "PostedSchedule",

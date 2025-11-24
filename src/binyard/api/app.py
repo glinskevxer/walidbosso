@@ -25,13 +25,17 @@ from starlette.routing import Route
 
 from binyard import __version__
 from binyard.api.errors import install_handlers
-from binyard.api.security import ApiKeyMiddleware, BodyCeilingMiddleware, RequestContextMiddleware
+from binyard.api.security import (
+    ApiKeyMiddleware,
+    BodyCeilingMiddleware,
+    RequestContextMiddleware,
+)
 from binyard.config import Settings, load_settings
 from binyard.observability.metrics import REGISTRY
 from binyard.store.migrate import pending
 from binyard.store.sqlite import SqliteUnitOfWork, connect
 
-__all__ = ["create_app", "ConnectionFactory"]
+__all__ = ["ConnectionFactory", "create_app"]
 
 ConnectionFactory = Callable[[], sqlite3.Connection]
 

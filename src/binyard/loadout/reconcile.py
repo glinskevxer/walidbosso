@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import Decimal
 from enum import StrEnum
+from typing import Final
 
 from binyard.bushels import Bushels
 from binyard.errors import LoadoutError, ValidationError
@@ -30,12 +31,14 @@ from binyard.money import Money, Price
 from binyard.percent import Percent
 
 __all__ = [
-    "Variance",
+    "PROTEST_WINDOW",
     "ArrivalReport",
     "Reconciliation",
-    "PROTEST_WINDOW",
+    "Variance",
     "reconcile",
 ]
+
+NO_DISCOUNT: Final = Price.zero()
 
 #: How long after arrival a grade certificate can still be protested.
 PROTEST_WINDOW = timedelta(days=5)
@@ -139,7 +142,7 @@ def reconcile(
     report: ArrivalReport,
     allowance: Percent,
     grade_shipped: int | None = None,
-    grade_discount: Price = Price.zero(),
+    grade_discount: Price = NO_DISCOUNT,
 ) -> Reconciliation:
     """Compare one shipped load against what the destination reported."""
     if not shipped.is_positive():

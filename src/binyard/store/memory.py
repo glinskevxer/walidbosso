@@ -26,12 +26,12 @@ from binyard.store.orders import MemoryOrderStore
 from binyard.tickets.ticket import ScaleTicket, TicketStatus
 
 __all__ = [
-    "MemoryTicketStore",
-    "MemoryObligationStore",
     "MemoryContractStore",
+    "MemoryObligationStore",
     "MemorySettlementStore",
-    "MemoryYardStore",
+    "MemoryTicketStore",
     "MemoryUnitOfWork",
+    "MemoryYardStore",
 ]
 
 
@@ -61,9 +61,7 @@ class MemoryTicketStore:
         self._tickets[key] = ticket
 
     def for_account(self, account: str) -> tuple[ScaleTicket, ...]:
-        return tuple(
-            ticket for ticket in self._sorted() if ticket.account == account
-        )
+        return tuple(ticket for ticket in self._sorted() if ticket.account == account)
 
     def weighed_on(self, day: date) -> tuple[ScaleTicket, ...]:
         return tuple(ticket for ticket in self._sorted() if ticket.weighed_on == day)
@@ -132,9 +130,7 @@ class MemoryObligationStore:
         )
 
     def as_of(self, day: date) -> tuple[StorageObligation, ...]:
-        return tuple(
-            obligation for obligation in self._sorted() if obligation.opened_on <= day
-        )
+        return tuple(obligation for obligation in self._sorted() if obligation.opened_on <= day)
 
     def _sorted(self) -> list[StorageObligation]:
         return sorted(

@@ -113,4 +113,4 @@ class TestConversion:
 
 def test_bushels_repr_round_trips():
     quantity = bushels("860.71")
-    assert eval(repr(quantity), {"Bushels": Bushels}) == quantity  # noqa: S307
+    assert eval(repr(quantity), {"Bushels": Bushels}) == quantity

@@ -26,13 +26,16 @@ from __future__ import annotations
 from dataclasses import dataclass, field, replace
 from datetime import date
 from enum import StrEnum
+from typing import Final
 
 from binyard.bushels import Bushels
+from binyard.commodity import CropStandard
 from binyard.errors import LoadoutError, ValidationError
 from binyard.loadout.carrier import Carrier, capacity_bushels
-from binyard.commodity import CropStandard
 
-__all__ = ["OrderStatus", "Load", "LoadoutOrder", "split_into_loads"]
+__all__ = ["Load", "LoadoutOrder", "OrderStatus", "split_into_loads"]
+
+NO_MINIMUM: Final = Bushels.zero()
 
 
 class OrderStatus(StrEnum):
@@ -153,9 +156,7 @@ class LoadoutOrder:
             carrier_identifier=carrier_identifier,
             quantity=quantity,
         )
-        return replace(
-            self, loads=(*self.loads, load), status=OrderStatus.LOADING
-        )
+        return replace(self, loads=(*self.loads, load), status=OrderStatus.LOADING)
 
     def ship_load(self, sequence: int, on: date, ticket_number: str) -> LoadoutOrder:
         found = [load for load in self.loads if load.sequence == sequence]
@@ -200,7 +201,7 @@ def split_into_loads(
     carriers: list[Carrier],
     standard: CropStandard,
     *,
-    minimum_load: Bushels = Bushels.zero(),
+    minimum_load: Bushels = NO_MINIMUM,
 ) -> tuple[tuple[str, Bushels], ...]:
     """Fill carriers in turn until the quantity is gone or they run out.
 

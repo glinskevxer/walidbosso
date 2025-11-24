@@ -28,7 +28,7 @@ from typing import Any, Protocol
 
 from binyard.errors import ConfigurationError
 
-__all__ = ["Migration", "MIGRATIONS_DIR", "discover", "applied", "pending", "migrate"]
+__all__ = ["MIGRATIONS_DIR", "Migration", "applied", "discover", "migrate", "pending"]
 
 MIGRATIONS_DIR = Path(__file__).parent / "migrations"
 

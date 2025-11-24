@@ -29,7 +29,7 @@ from binyard.errors import ValidationError
 from binyard.money import Money, Price
 from binyard.percent import Percent
 
-__all__ = ["PriceKind", "ContractStatus", "FillState", "Delivery", "PurchaseContract"]
+__all__ = ["ContractStatus", "Delivery", "FillState", "PriceKind", "PurchaseContract"]
 
 
 class PriceKind(StrEnum):
@@ -123,7 +123,9 @@ class PurchaseContract:
             )
         if self.price_kind is PriceKind.BASIS:
             if self.basis is None:
-                raise ValidationError("a basis contract needs a basis", contract=self.identifier)
+                raise ValidationError(
+                    "a basis contract needs a basis", contract=self.identifier
+                )
             if not self.futures_month:
                 raise ValidationError(
                     "a basis contract needs a futures month", contract=self.identifier
@@ -195,9 +197,7 @@ class PurchaseContract:
     def value_of(self, quantity: Bushels) -> Money:
         settled = self.price()
         if settled is None:
-            raise ValidationError(
-                "this contract has no price yet", contract=self.identifier
-            )
+            raise ValidationError("this contract has no price yet", contract=self.identifier)
         return settled.extend(quantity)
 
     def covers(self, on: date) -> bool:

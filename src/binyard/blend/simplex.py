@@ -27,7 +27,7 @@ from fractions import Fraction
 
 from binyard.errors import ValidationError
 
-__all__ = ["Sense", "Constraint", "LinearProgram", "Status", "Solution", "solve"]
+__all__ = ["Constraint", "LinearProgram", "Sense", "Solution", "Status", "solve"]
 
 _ZERO = Fraction(0)
 
@@ -124,11 +124,7 @@ def solve(program: LinearProgram, *, iteration_limit: int = 10_000) -> Solution:
 
     extra = 0
     for row in rows:
-        if row.sense is Sense.LE:
-            slack_of.append(extra)
-            extra += 1
-            artificial_of.append(None)
-        elif row.sense is Sense.GE:
+        if row.sense is Sense.LE or row.sense is Sense.GE:
             slack_of.append(extra)
             extra += 1
             artificial_of.append(None)
@@ -246,7 +242,11 @@ def _pivot(
             if line[entering] <= 0:
                 continue
             ratio = line[width] / line[entering]
-            if best is None or ratio < best or (ratio == best and basis[index] < basis[leaving]):
+            if (
+                best is None
+                or ratio < best
+                or (ratio == best and basis[index] < basis[leaving])
+            ):
                 best = ratio
                 leaving = index
         if leaving < 0:

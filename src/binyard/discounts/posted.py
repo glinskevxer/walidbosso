@@ -30,7 +30,7 @@ from binyard.discounts.schedule import (
 from binyard.grading.factors import FactorName
 from binyard.money import Price
 
-__all__ = ["SEASON_START", "default_book", "CORN_SCHEDULE", "SOYBEAN_SCHEDULE"]
+__all__ = ["CORN_SCHEDULE", "SEASON_START", "SOYBEAN_SCHEDULE", "default_book"]
 
 SEASON_START: Final = date(2025, 9, 1)
 
@@ -123,7 +123,13 @@ SOYBEAN_SCHEDULE: Final = PostedSchedule(
         ),
     ),
     grades=GradeSchedule(
-        rates={1: Price.zero(), 2: Price.zero(), 3: _cents("5"), 4: _cents("15"), 0: _cents("40")}
+        rates={
+            1: Price.zero(),
+            2: Price.zero(),
+            3: _cents("5"),
+            4: _cents("15"),
+            0: _cents("40"),
+        }
     ),
 )
 
@@ -194,7 +200,13 @@ SORGHUM_SCHEDULE: Final = PostedSchedule(
         ),
     ),
     grades=GradeSchedule(
-        rates={1: Price.zero(), 2: Price.zero(), 3: _cents("4"), 4: _cents("10"), 0: _cents("35")}
+        rates={
+            1: Price.zero(),
+            2: Price.zero(),
+            3: _cents("4"),
+            4: _cents("10"),
+            0: _cents("35"),
+        }
     ),
 )
 
@@ -215,7 +227,15 @@ OAT_SCHEDULE: Final = PostedSchedule(
             bands=(Band(_d("3.0"), None, _cents("2"), Basis.PER_POINT),),
         ),
     ),
-    grades=GradeSchedule(rates={1: Price.zero(), 2: Price.zero(), 3: _cents("3"), 4: _cents("8"), 0: _cents("25")}),
+    grades=GradeSchedule(
+        rates={
+            1: Price.zero(),
+            2: Price.zero(),
+            3: _cents("3"),
+            4: _cents("8"),
+            0: _cents("25"),
+        }
+    ),
 )
 
 SUNFLOWER_SCHEDULE: Final = PostedSchedule(

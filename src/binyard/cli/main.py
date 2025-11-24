@@ -24,7 +24,7 @@ from binyard.cli.commands import bins, blend, migrate, receive, report, ship
 from binyard.cli.context import Context, OutputFormat, build_context
 from binyard.errors import BinyardError
 
-__all__ = ["build_parser", "run", "main"]
+__all__ = ["build_parser", "main", "run"]
 
 _COMMANDS = (migrate, bins, receive, blend, ship, report)
 

@@ -103,9 +103,7 @@ class Bushels:
         if parts < 1:
             raise ValidationError("cannot split into fewer than one part", parts=parts)
         base, remainder = divmod(self.hundredths, parts)
-        return tuple(
-            Bushels(base + (1 if index < remainder else 0)) for index in range(parts)
-        )
+        return tuple(Bushels(base + (1 if index < remainder else 0)) for index in range(parts))
 
     def __str__(self) -> str:
         return f"{self.amount} bu"
@@ -134,21 +132,15 @@ def from_weight(weight: Weight, standard: CropStandard) -> Bushels:
     crossing is made; see the module docstring for why that matters.
     """
     if not isinstance(weight, Weight):
-        raise IncompatibleUnits(
-            "expected a weight to convert", got=type(weight).__name__
-        )
+        raise IncompatibleUnits("expected a weight to convert", got=type(weight).__name__)
     per_bushel_hundredths = standard.pounds_per_bushel * HUNDREDTHS_PER_BUSHEL
-    quotient = (
-        Decimal(weight.hundredths) * HUNDREDTHS_PER_BUSHEL / per_bushel_hundredths
-    )
+    quotient = Decimal(weight.hundredths) * HUNDREDTHS_PER_BUSHEL / per_bushel_hundredths
     return Bushels(int(quotient.quantize(Decimal("1"), rounding=ROUND_HALF_UP)))
 
 
 def to_weight(quantity: Bushels, standard: CropStandard) -> Weight:
     """Convert bushels back to pounds, for a load-out order written in bushels."""
     if not isinstance(quantity, Bushels):
-        raise IncompatibleUnits(
-            "expected bushels to convert", got=type(quantity).__name__
-        )
+        raise IncompatibleUnits("expected bushels to convert", got=type(quantity).__name__)
     product = Decimal(quantity.hundredths) * standard.pounds_per_bushel
     return Weight(int(product.quantize(Decimal("1"), rounding=ROUND_HALF_UP)))

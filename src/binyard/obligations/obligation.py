@@ -167,10 +167,14 @@ class StorageObligation:
 
     @property
     def needs_pricing(self) -> bool:
-        return self.kind in {
-            ObligationKind.DEFERRED_PRICE,
-            ObligationKind.PRICE_LATER,
-        } and not self.is_priced
+        return (
+            self.kind
+            in {
+                ObligationKind.DEFERRED_PRICE,
+                ObligationKind.PRICE_LATER,
+            }
+            and not self.is_priced
+        )
 
     def storage_starts_on(self) -> date:
         from datetime import timedelta
@@ -191,7 +195,9 @@ class StorageObligation:
         """Draw against the obligation, closing it when it empties."""
         if not self.is_open:
             raise ObligationError(
-                "that obligation is not open", obligation=self.identifier, status=self.status.value
+                "that obligation is not open",
+                obligation=self.identifier,
+                status=self.status.value,
             )
         if release.on < self.opened_on:
             raise ObligationError(
@@ -216,9 +222,7 @@ class StorageObligation:
         releases = (*self.releases, release)
         released = sum(item.quantity.hundredths for item in releases)
         status = (
-            ObligationStatus.CLOSED
-            if released == self.quantity.hundredths
-            else self.status
+            ObligationStatus.CLOSED if released == self.quantity.hundredths else self.status
         )
         return replace(self, releases=releases, status=status)
 
@@ -238,9 +242,7 @@ class StorageObligation:
             raise ObligationError(
                 "only an open obligation can be cancelled", obligation=self.identifier
             )
-        return replace(
-            self, status=ObligationStatus.CANCELLED, superseded_by=superseded_by
-        )
+        return replace(self, status=ObligationStatus.CANCELLED, superseded_by=superseded_by)
 
     def describe(self) -> dict[str, object]:
         return {

@@ -34,7 +34,7 @@ def routes() -> list[Route]:
 
 
 def _limits_from(reader: Reader, name: str) -> tuple[SpecLimit, ...]:
-    raw = reader._raw(name, {})  # noqa: SLF001 - the reader is ours
+    raw = reader._raw(name, {})
     if raw in (None, {}):
         return ()
     if not isinstance(raw, dict):
@@ -56,7 +56,7 @@ def _limits_from(reader: Reader, name: str) -> tuple[SpecLimit, ...]:
 def spec_from(reader: Reader, commodity_code: str) -> BlendSpec:
     """Build the spec, letting explicit limits tighten a grade's."""
     quantity = reader.bushels("quantity")
-    grade = reader._raw("grade", None)  # noqa: SLF001 - the reader is ours
+    grade = reader._raw("grade", None)
     limits: dict[FactorName, SpecLimit] = {}
     if grade is not None:
         from_grade = BlendSpec.for_grade(commodity_code, quantity, int(grade))
@@ -84,9 +84,7 @@ async def plan(request: Request) -> JSONResponse:
     if objective is Objective.EXPLICIT_COST:
         raise ValidationError("explicit costs are not offered over http")
     locked = frozenset(reader.strings("lock", []))
-    minimum = reader.bushels(
-        "minimum_draw", str(request.app.state.settings.minimum_bin_draw)
-    )
+    minimum = reader.bushels("minimum_draw", str(request.app.state.settings.minimum_bin_draw))
 
     work = work_for(request)
     try:

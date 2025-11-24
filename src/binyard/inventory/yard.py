@@ -28,7 +28,7 @@ from binyard.grading.factors import FactorSample
 from binyard.inventory.bin import Bin, BinContents
 from binyard.inventory.ledger import Ledger, Movement, MovementKind
 
-__all__ = ["Yard", "BinState"]
+__all__ = ["BinState", "Yard"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -101,7 +101,9 @@ class Yard:
     def states(self, *, when: datetime | None = None) -> tuple[BinState, ...]:
         return tuple(self.state_of(s.identifier, when=when) for s in self.bins)
 
-    def holding(self, commodity_code: str, *, when: datetime | None = None) -> tuple[BinState, ...]:
+    def holding(
+        self, commodity_code: str, *, when: datetime | None = None
+    ) -> tuple[BinState, ...]:
         return tuple(
             state
             for state in self.states(when=when)

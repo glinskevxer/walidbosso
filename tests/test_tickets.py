@@ -2,15 +2,6 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 
 import pytest
-from conftest import (
-    HARVEST_DAY,
-    HARVEST_NOON,
-    LOCATION,
-    graded_ticket,
-    sample_for,
-    ticket_for,
-    weights_for,
-)
 
 from binyard import commodity
 from binyard.bushels import bushels
@@ -20,6 +11,15 @@ from binyard.percent import percent
 from binyard.shrink import ShrinkPolicy
 from binyard.tickets import ScaleWeights, TareSource, TicketStatus, split_weights
 from binyard.units import pounds
+from conftest import (
+    HARVEST_DAY,
+    HARVEST_NOON,
+    LOCATION,
+    graded_ticket,
+    sample_for,
+    ticket_for,
+    weights_for,
+)
 
 
 class TestScaleWeights:
@@ -169,8 +169,8 @@ class TestTicketLifecycle:
         ]
 
     def test_a_settled_ticket_is_finished(self):
-        settled = graded_ticket().applied(at=HARVEST_NOON, by="d").settled(
-            at=HARVEST_NOON, by="a"
+        settled = (
+            graded_ticket().applied(at=HARVEST_NOON, by="d").settled(at=HARVEST_NOON, by="a")
         )
         assert not settled.can_become(TicketStatus.VOID)
         with pytest.raises(TicketStateError):
@@ -221,9 +221,7 @@ class TestVoidingAndCorrecting:
     def test_a_correction_needs_a_different_number(self):
         original = ticket_for()
         with pytest.raises(ValidationError):
-            original.corrected_by(
-                original.number, "typo", at=HARVEST_NOON, by="manager"
-            )
+            original.corrected_by(original.number, "typo", at=HARVEST_NOON, by="manager")
 
     def test_the_replacement_carries_the_reason_in_its_history(self):
         _, fresh = ticket_for().corrected_by(

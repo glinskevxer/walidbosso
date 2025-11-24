@@ -19,7 +19,7 @@ from starlette.responses import JSONResponse
 from binyard.errors import BinyardError
 from binyard.observability.logging import get_logger
 
-__all__ = ["status_for", "error_response", "install_handlers"]
+__all__ = ["error_response", "install_handlers", "status_for"]
 
 _log = get_logger("binyard.api")
 

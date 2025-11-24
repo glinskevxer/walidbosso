@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 
 import pytest
-from conftest import HARVEST_NOON, bin_for, sample_for, yard_with
 
 from binyard import commodity
 from binyard.bushels import bushels
@@ -14,8 +13,17 @@ from binyard.errors import (
     ValidationError,
 )
 from binyard.grading.factors import FactorSample, Odor
-from binyard.inventory import Bin, BinContents, BinKind, Ledger, Movement, MovementKind, Yard, commingle
+from binyard.inventory import (
+    BinContents,
+    BinKind,
+    Ledger,
+    Movement,
+    MovementKind,
+    Yard,
+    commingle,
+)
 from binyard.percent import percent
+from conftest import HARVEST_NOON, bin_for, sample_for, yard_with
 
 MORNING = datetime(2025, 10, 14, 8, 0)
 NOON = HARVEST_NOON

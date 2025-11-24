@@ -26,7 +26,7 @@ from binyard.grading.factors import Direction, FactorName, direction_of
 from binyard.reporting.reports import blend_table
 from binyard.reporting.table import Column, Table
 
-__all__ = ["register", "handle", "build_spec"]
+__all__ = ["build_spec", "handle", "register"]
 
 
 def register(subparsers: argparse._SubParsersAction) -> None:

@@ -26,7 +26,7 @@ from typing import Any
 
 from binyard.errors import ValidationError
 
-__all__ = ["Align", "Column", "Table", "to_csv", "to_text", "to_json"]
+__all__ = ["Align", "Column", "Table", "to_csv", "to_json", "to_text"]
 
 
 class Align(StrEnum):
@@ -129,9 +129,7 @@ def to_text(table: Table, *, width_limit: int = 200) -> str:
     if table.is_empty:
         lines.append("(nothing to report)")
     for row in table.rows:
-        lines.append(
-            _row([table.cell(row, c) for c in table.columns], widths, table.columns)
-        )
+        lines.append(_row([table.cell(row, c) for c in table.columns], widths, table.columns))
     if table.footers:
         lines.append("  ".join("-" * width for width in widths))
         for row in table.footers:
@@ -165,5 +163,7 @@ def _row(cells: list[str], widths: list[int], columns: tuple[Column, ...]) -> st
     parts: list[str] = []
     for cell, width, column in zip(cells, widths, columns, strict=True):
         clipped = cell if len(cell) <= width else cell[: width - 1] + "…"
-        parts.append(clipped.rjust(width) if column.align is Align.RIGHT else clipped.ljust(width))
+        parts.append(
+            clipped.rjust(width) if column.align is Align.RIGHT else clipped.ljust(width)
+        )
     return "  ".join(parts).rstrip()

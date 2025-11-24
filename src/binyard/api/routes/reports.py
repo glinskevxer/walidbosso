@@ -27,7 +27,7 @@ from binyard.services.reporting import (
     review_queue,
 )
 
-__all__ = ["routes", "render"]
+__all__ = ["render", "routes"]
 
 
 def routes() -> list[Route]:

@@ -22,13 +22,13 @@ from binyard.reporting.table import Column, Table
 from binyard.settlement.statement import Settlement
 
 __all__ = [
-    "position_table",
-    "examiner_statement",
     "bin_table",
-    "obligation_table",
-    "settlement_table",
     "blend_table",
     "discount_table",
+    "examiner_statement",
+    "obligation_table",
+    "position_table",
+    "settlement_table",
 ]
 
 
@@ -75,9 +75,7 @@ def examiner_statement(report: PositionReport) -> Table:
             }
         )
     return Table(
-        title=(
-            f"Warehouse examiner statement, {report.location}, {report.on.isoformat()}"
-        ),
+        title=(f"Warehouse examiner statement, {report.location}, {report.on.isoformat()}"),
         columns=columns,
         rows=tuple(rows),
     )
@@ -193,7 +191,9 @@ def discount_table(assessment: Assessment) -> Table:
         Column("note", "Band"),
     )
     described = assessment.describe()
-    footers = ({"source": "total", "rate": described["total_rate"], "amount": described["total"]},)
+    footers = (
+        {"source": "total", "rate": described["total_rate"], "amount": described["total"]},
+    )
     return Table(
         title=f"Discounts on {described['quantity']}",
         columns=columns,

@@ -19,9 +19,8 @@ from decimal import Decimal
 from typing import Any
 
 from binyard.bushels import Bushels
-from binyard.grading.factors import FactorSample, Odor
+from binyard.grading.factors import FactorName, FactorSample, Odor
 from binyard.grading.grade import GradeResult, LimitingFactor, SpecialGrade
-from binyard.grading.factors import FactorName
 from binyard.percent import Percent
 from binyard.shrink import ShrinkResult
 from binyard.tickets.ticket import TicketEvent, TicketStatus
@@ -29,18 +28,18 @@ from binyard.tickets.weights import ScaleWeights, TareSource
 from binyard.units import Weight
 
 __all__ = [
-    "sample_to_json",
-    "sample_from_json",
-    "grade_to_json",
-    "grade_from_json",
-    "shrink_to_json",
-    "shrink_from_json",
-    "history_to_json",
-    "history_from_json",
-    "weights_to_row",
-    "weights_from_row",
     "as_date",
     "as_datetime",
+    "grade_from_json",
+    "grade_to_json",
+    "history_from_json",
+    "history_to_json",
+    "sample_from_json",
+    "sample_to_json",
+    "shrink_from_json",
+    "shrink_to_json",
+    "weights_from_row",
+    "weights_to_row",
 ]
 
 _PERCENT_FIELDS = (
@@ -56,8 +55,10 @@ _PERCENT_FIELDS = (
 
 
 def as_date(value: str | date) -> date:
-    return value if isinstance(value, date) and not isinstance(value, datetime) else (
-        value.date() if isinstance(value, datetime) else date.fromisoformat(str(value))
+    return (
+        value
+        if isinstance(value, date) and not isinstance(value, datetime)
+        else (value.date() if isinstance(value, datetime) else date.fromisoformat(str(value)))
     )
 
 

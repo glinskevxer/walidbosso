@@ -72,9 +72,7 @@ async def create(request: Request) -> JSONResponse:
     # The ledger is dated from the weighing, not from the wall clock. A load
     # posted the morning after harvest with yesterday's date has to fold into
     # yesterday's position, or the bin reads empty on the day it was filled.
-    at = reader.timestamp(
-        "at", datetime.combine(weighed_on, datetime.now().time()).isoformat()
-    )
+    at = reader.timestamp("at", datetime.combine(weighed_on, datetime.now().time()).isoformat())
     settings = request.app.state.settings
 
     receipt_request = ReceiptRequest(
@@ -88,9 +86,7 @@ async def create(request: Request) -> JSONResponse:
         by=reader.text("by", "api"),
         hauler=reader.optional_text("hauler"),
         priority=reader.choice("priority", Priority, Priority.EARLIEST_DEADLINE),
-        storage_kind=reader.choice(
-            "storage_kind", ObligationKind, ObligationKind.OPEN_STORAGE
-        ),
+        storage_kind=reader.choice("storage_kind", ObligationKind, ObligationKind.OPEN_STORAGE),
         obligation_identifier=reader.optional_text("obligation"),
     )
 

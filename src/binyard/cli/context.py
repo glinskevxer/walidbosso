@@ -24,7 +24,7 @@ from binyard.errors import ConfigurationError
 from binyard.reporting.table import Table, to_csv, to_json, to_text
 from binyard.store.sqlite import SqliteUnitOfWork, connect
 
-__all__ = ["OutputFormat", "Context", "build_context", "database_path"]
+__all__ = ["Context", "OutputFormat", "build_context", "database_path"]
 
 
 class OutputFormat(StrEnum):
@@ -41,9 +41,7 @@ def database_path(database_url: str) -> Path | str:
         return Path(database_url[len("sqlite:///") :])
     if database_url.startswith("sqlite://"):
         return Path(database_url[len("sqlite://") :])
-    raise ConfigurationError(
-        "this build only speaks sqlite urls", database_url=database_url
-    )
+    raise ConfigurationError("this build only speaks sqlite urls", database_url=database_url)
 
 
 @dataclass(slots=True)

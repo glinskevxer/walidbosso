@@ -25,18 +25,18 @@ from binyard.errors import UnknownCommodity
 from binyard.percent import Percent
 
 __all__ = [
-    "PricingBasis",
-    "CropStandard",
     "CORN",
-    "SOYBEANS",
-    "HRW_WHEAT",
-    "SRW_WHEAT",
     "GRAIN_SORGHUM",
+    "HRW_WHEAT",
     "OATS",
-    "SUNFLOWER",
+    "SOYBEANS",
+    "SRW_WHEAT",
     "STANDARDS",
-    "lookup",
+    "SUNFLOWER",
+    "CropStandard",
+    "PricingBasis",
     "codes",
+    "lookup",
 ]
 
 
@@ -71,9 +71,7 @@ class CropStandard:
         if not (Percent.zero() < self.market_moisture < Percent.of_points(100)):
             raise ValueError(f"{self.code} market moisture is not a percentage")
         if self.receiving_moisture_ceiling <= self.market_moisture:
-            raise ValueError(
-                f"{self.code} would refuse loads it is willing to pay for"
-            )
+            raise ValueError(f"{self.code} would refuse loads it is willing to pay for")
 
     @property
     def priced_by_the_bushel(self) -> bool:

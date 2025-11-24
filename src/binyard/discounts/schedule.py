@@ -26,12 +26,13 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from enum import StrEnum
+from itertools import pairwise
 
 from binyard.errors import ConfigurationError, NoScheduleInEffect, ScheduleError
 from binyard.grading.factors import Direction, FactorName, direction_of
 from binyard.money import Price
 
-__all__ = ["Basis", "Band", "FactorSchedule", "GradeSchedule", "PostedSchedule", "ScheduleBook"]
+__all__ = ["Band", "Basis", "FactorSchedule", "GradeSchedule", "PostedSchedule", "ScheduleBook"]
 
 
 class Basis(StrEnum):
@@ -180,7 +181,7 @@ class GradeSchedule:
         if not self.rates:
             raise ConfigurationError("a grade schedule needs at least one rate")
         graded = sorted(g for g in self.rates if g > 0)
-        for better, worse in zip(graded, graded[1:], strict=False):
+        for better, worse in pairwise(graded):
             if self.rates[worse] < self.rates[better]:
                 raise ConfigurationError(
                     "a worse grade cannot be cheaper than a better one",
@@ -215,9 +216,7 @@ class PostedSchedule:
             )
         seen = [f.factor for f in self.factors]
         if len(set(seen)) != len(seen):
-            raise ConfigurationError(
-                "a factor is posted twice", commodity=self.commodity_code
-            )
+            raise ConfigurationError("a factor is posted twice", commodity=self.commodity_code)
 
     def covers(self, day: date) -> bool:
         if day < self.effective_from:

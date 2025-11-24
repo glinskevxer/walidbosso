@@ -30,12 +30,12 @@ from binyard.observability import metrics
 from binyard.observability.logging import bound
 
 __all__ = [
-    "REQUEST_ID_HEADER",
     "API_KEY_HEADER",
     "OPEN_PATHS",
-    "RequestContextMiddleware",
-    "BodyCeilingMiddleware",
+    "REQUEST_ID_HEADER",
     "ApiKeyMiddleware",
+    "BodyCeilingMiddleware",
+    "RequestContextMiddleware",
 ]
 
 REQUEST_ID_HEADER = "x-request-id"
@@ -71,9 +71,11 @@ class RequestContextMiddleware:
 
         path = scope.get("path", "")
         method = scope.get("method", "GET")
-        with bound(request_id=request_id, path=path, method=method):
-            with metrics.timed("http_request_seconds", method=method):
-                await self.app(scope, receive, wrapped)
+        with (
+            bound(request_id=request_id, path=path, method=method),
+            metrics.timed("http_request_seconds", method=method),
+        ):
+            await self.app(scope, receive, wrapped)
         metrics.counter(
             "http_requests_total",
             method=method,
@@ -144,7 +146,9 @@ class ApiKeyMiddleware:
 
 
 async def _refuse(send: Send, status: int, code: str, message: str) -> None:
-    response = JSONResponse({"code": code, "message": message, "detail": {}}, status_code=status)
+    response = JSONResponse(
+        {"code": code, "message": message, "detail": {}}, status_code=status
+    )
     await response(  # type: ignore[call-arg]
         {"type": "http"}, _no_body, send
     )

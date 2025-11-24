@@ -86,9 +86,7 @@ async def create(request: Request) -> JSONResponse:
         name=reader.text("name"),
         kind=reader.choice("kind", BinKind, BinKind.UPRIGHT),
         capacity=reader.bushels("capacity"),
-        allowed_commodities=frozenset(
-            item.upper() for item in reader.strings("only", [])
-        ),
+        allowed_commodities=frozenset(item.upper() for item in reader.strings("only", [])),
         aerated=reader.flag("aerated", True),
         pile_allowance=reader.percent("pile_allowance", "0"),
     )

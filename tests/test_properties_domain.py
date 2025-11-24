@@ -18,18 +18,16 @@ from binyard import commodity
 from binyard.blend.planner import Objective, plan_blend
 from binyard.blend.spec import BlendSource, BlendSpec, SpecLimit
 from binyard.bushels import Bushels
-from binyard.discounts.posted import CORN_SCHEDULE
 from binyard.discounts.apply import assess
+from binyard.discounts.posted import CORN_SCHEDULE
 from binyard.errors import InfeasibleBlend
 from binyard.grading.factors import FactorName, FactorSample
 from binyard.grading.grade import determine
-from binyard.money import Money
 from binyard.inventory.bin import commingle
+from binyard.money import Money
 from binyard.percent import Percent
 
-QUIET = settings(
-    max_examples=150, suppress_health_check=[HealthCheck.function_scoped_fixture]
-)
+QUIET = settings(max_examples=150, suppress_health_check=[HealthCheck.function_scoped_fixture])
 
 test_weights = st.decimals(
     min_value=Decimal("35"), max_value=Decimal("65"), places=1, allow_nan=False

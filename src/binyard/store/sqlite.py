@@ -67,10 +67,12 @@ from binyard.store.migrate import migrate
 from binyard.store.orders import SqliteOrderStore
 from binyard.tickets.ticket import ScaleTicket, TicketKind, TicketStatus
 
-__all__ = ["connect", "SqliteUnitOfWork"]
+__all__ = ["SqliteUnitOfWork", "connect"]
 
 
-def connect(path: str | Path = ":memory:", *, run_migrations: bool = True) -> sqlite3.Connection:
+def connect(
+    path: str | Path = ":memory:", *, run_migrations: bool = True
+) -> sqlite3.Connection:
     """Open a connection with the settings this schema assumes."""
     connection = sqlite3.connect(str(path))
     connection.row_factory = sqlite3.Row
@@ -110,9 +112,7 @@ class SqliteTicketStore(_Store):
         )
 
     def get(self, number: TicketNumber) -> ScaleTicket:
-        row = self._one(
-            f"SELECT {self._COLUMNS} FROM tickets WHERE number = ?", (str(number),)
-        )
+        row = self._one(f"SELECT {self._COLUMNS} FROM tickets WHERE number = ?", (str(number),))
         if row is None:
             raise NotFound("ticket", str(number))
         return self._ticket(row)
@@ -345,8 +345,7 @@ class SqliteContractStore(_Store):
 
     def exists(self, identifier: str) -> bool:
         return (
-            self._one("SELECT 1 FROM contracts WHERE identifier = ?", (identifier,))
-            is not None
+            self._one("SELECT 1 FROM contracts WHERE identifier = ?", (identifier,)) is not None
         )
 
     def replace(self, contract: PurchaseContract) -> None:
@@ -441,14 +440,18 @@ class SqliteContractStore(_Store):
             flat_price=None
             if mapping["flat_price_ticks"] is None
             else Price(int(mapping["flat_price_ticks"])),
-            basis=None if mapping["basis_ticks"] is None else Price(int(mapping["basis_ticks"])),
+            basis=None
+            if mapping["basis_ticks"] is None
+            else Price(int(mapping["basis_ticks"])),
             futures_month=mapping["futures_month"],
             futures_price=None
             if mapping["futures_price_ticks"] is None
             else Price(int(mapping["futures_price_ticks"])),
             tolerance=Percent(int(mapping["tolerance_hundredths"])),
             status=ContractStatus(mapping["status"]),
-            written_on=None if mapping["written_on"] is None else as_date(mapping["written_on"]),
+            written_on=None
+            if mapping["written_on"] is None
+            else as_date(mapping["written_on"]),
             deliveries=tuple(
                 Delivery(
                     on=as_date(item["delivered_on"]),
@@ -534,7 +537,9 @@ class SqliteSettlementStore(_Store):
 
 class SqliteYardStore(_Store):
     def load(self) -> Yard:
-        bins = tuple(self._bin(row) for row in self._all("SELECT * FROM bins ORDER BY identifier"))
+        bins = tuple(
+            self._bin(row) for row in self._all("SELECT * FROM bins ORDER BY identifier")
+        )
         movements = tuple(
             self._movement(row)
             for row in self._all("SELECT * FROM movements ORDER BY occurred_at, id")

@@ -21,20 +21,20 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from binyard import commodity  # noqa: E402
-from binyard.bushels import bushels  # noqa: E402
-from binyard.contracts.contract import PriceKind, PurchaseContract  # noqa: E402
-from binyard.discounts.posted import default_book  # noqa: E402
-from binyard.errors import BinyardError  # noqa: E402
-from binyard.grading.factors import FactorSample  # noqa: E402
-from binyard.identity import LocationCode, Sequence  # noqa: E402
-from binyard.inventory.bin import Bin, BinKind  # noqa: E402
-from binyard.money import Price  # noqa: E402
-from binyard.percent import percent  # noqa: E402
-from binyard.services.receiving import ReceiptRequest, receive_load  # noqa: E402
-from binyard.store.sqlite import SqliteUnitOfWork, connect  # noqa: E402
-from binyard.tickets.weights import ScaleWeights  # noqa: E402
-from binyard.units import pounds  # noqa: E402
+from binyard import commodity
+from binyard.bushels import bushels
+from binyard.contracts.contract import PriceKind, PurchaseContract
+from binyard.discounts.posted import default_book
+from binyard.errors import BinyardError
+from binyard.grading.factors import FactorSample
+from binyard.identity import LocationCode, Sequence
+from binyard.inventory.bin import Bin, BinKind
+from binyard.money import Price
+from binyard.percent import percent
+from binyard.services.receiving import ReceiptRequest, receive_load
+from binyard.store.sqlite import SqliteUnitOfWork, connect
+from binyard.tickets.weights import ScaleWeights
+from binyard.units import pounds
 
 LOCATION = LocationCode("WBS")
 HARVEST_START = date(2025, 9, 22)
@@ -133,9 +133,7 @@ def seed(database: Path, *, loads: int, seed_value: int) -> dict[str, object]:
         request = ReceiptRequest(
             account=GROWERS[index % len(GROWERS)],
             standard=standard,
-            weights=ScaleWeights(
-                gross=pounds(str(30_180 + net)), tare=pounds("30180")
-            ),
+            weights=ScaleWeights(gross=pounds(str(30_180 + net)), tare=pounds("30180")),
             sample=sample_for(standard, rng, day_index),
             bin_identifier=destination,
             weighed_on=day,

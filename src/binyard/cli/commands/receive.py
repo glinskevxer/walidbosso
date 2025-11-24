@@ -29,7 +29,7 @@ from binyard.services.receiving import ReceiptRequest, receive_load
 from binyard.tickets.weights import ScaleWeights, TareSource
 from binyard.units import parse_weight
 
-__all__ = ["register", "handle"]
+__all__ = ["handle", "register"]
 
 
 def register(subparsers: argparse._SubParsersAction) -> None:
@@ -117,8 +117,7 @@ def handle(context: Context, arguments: argparse.Namespace) -> int:
     context.emit(_application_table(receipt))
     if receipt.ticket.needs_review:
         context.warn(
-            "this ticket needs review: "
-            + "; ".join(receipt.ticket.weights.review_reasons())
+            "this ticket needs review: " + "; ".join(receipt.ticket.weights.review_reasons())
         )
     return 0
 

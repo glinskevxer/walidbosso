@@ -32,7 +32,7 @@ from binyard.commodity import CropStandard
 from binyard.errors import ValidationError
 from binyard.percent import Percent
 
-__all__ = ["ShrinkPolicy", "ShrinkResult", "water_shrink_ratio", "apply_shrink"]
+__all__ = ["ShrinkPolicy", "ShrinkResult", "apply_shrink", "water_shrink_ratio"]
 
 
 def water_shrink_ratio(wet: Percent, dry: Percent) -> Decimal:
@@ -62,9 +62,13 @@ class ShrinkPolicy:
         if self.target_moisture.hundredths <= 0:
             raise ValidationError("target moisture must be positive", crop=self.commodity_code)
         if self.target_moisture.points >= 100:
-            raise ValidationError("target moisture must be under 100%", crop=self.commodity_code)
+            raise ValidationError(
+                "target moisture must be under 100%", crop=self.commodity_code
+            )
         if self.handling_shrink.hundredths < 0:
-            raise ValidationError("handling shrink cannot be negative", crop=self.commodity_code)
+            raise ValidationError(
+                "handling shrink cannot be negative", crop=self.commodity_code
+            )
         if self.handling_shrink.points >= 100:
             raise ValidationError("handling shrink cannot take the whole load")
         if self.posted_factor_per_point is not None and self.posted_factor_per_point < 0:
@@ -150,9 +154,7 @@ def apply_shrink(gross: Bushels, moisture: Percent, policy: ShrinkPolicy) -> Shr
     if policy.handling_shrink.is_zero():
         handling = Bushels.zero()
     else:
-        handling = _round_bushels(
-            Decimal(dried.hundredths) * policy.handling_shrink.fraction
-        )
+        handling = _round_bushels(Decimal(dried.hundredths) * policy.handling_shrink.fraction)
 
     return ShrinkResult(
         gross=gross,

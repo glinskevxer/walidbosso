@@ -11,7 +11,7 @@ from binyard.percent import percent
 from binyard.reporting.reports import bin_table
 from binyard.reporting.table import Column, Table
 
-__all__ = ["register", "handle_add", "handle_list", "handle_show"]
+__all__ = ["handle_add", "handle_list", "handle_show", "register"]
 
 
 def register(subparsers: argparse._SubParsersAction) -> None:
@@ -80,10 +80,7 @@ def handle_show(context: Context, arguments: argparse.Namespace) -> int:
         {"field": "quantity", "value": contents["quantity"]},
         {"field": "headroom", "value": described["headroom"]},
     ]
-    rows.extend(
-        {"field": key, "value": value}
-        for key, value in sorted(quality.items())
-    )
+    rows.extend({"field": key, "value": value} for key, value in sorted(quality.items()))
     context.emit(
         Table(
             title=f"Bin {state.identifier}",

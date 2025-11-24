@@ -80,9 +80,7 @@ def settle_tickets(
                 account=ticket.account,
             )
         if ticket.commodity_code != request.commodity_code:
-            raise ValidationError(
-                "that ticket is for another crop", ticket=str(ticket.number)
-            )
+            raise ValidationError("that ticket is for another crop", ticket=str(ticket.number))
         if ticket.status is not TicketStatus.APPLIED:
             raise TicketStateError(
                 "only an applied ticket can be settled",
@@ -164,8 +162,6 @@ def settle_tickets(
     settlement = builder.build()
     work.settlements.add(settlement)
     for ticket in tickets:
-        work.tickets.replace(
-            ticket.settled(at=request.at, by=request.by, note=request.number)
-        )
+        work.tickets.replace(ticket.settled(at=request.at, by=request.by, note=request.number))
     work.commit()
     return settlement

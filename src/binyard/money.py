@@ -32,7 +32,9 @@ TICKS_PER_DOLLAR: Final = 10_000
 _CENT: Final = Decimal("0.01")
 _TICK: Final = Decimal("0.0001")
 
-_MONEY_TEXT = re.compile(r"^\s*(?P<sign>[-+]?)\$?\s*(?P<value>\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?)\s*$")
+_MONEY_TEXT = re.compile(
+    r"^\s*(?P<sign>[-+]?)\$?\s*(?P<value>\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?)\s*$"
+)
 
 
 @dataclass(frozen=True, order=True, slots=True)
@@ -164,9 +166,7 @@ class Price:
     def extend(self, quantity: Bushels) -> Money:
         """Price times quantity, rounded half up to the cent. The only rounding."""
         if not isinstance(quantity, Bushels):
-            raise IncompatibleUnits(
-                "a price extends over bushels", got=type(quantity).__name__
-            )
+            raise IncompatibleUnits("a price extends over bushels", got=type(quantity).__name__)
         product = (
             Decimal(self.ticks)
             * Decimal(quantity.hundredths)

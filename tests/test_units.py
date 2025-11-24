@@ -87,7 +87,7 @@ class TestArithmetic:
         assert pounds("1").scaled_by("0.005") == pounds("0.01")
 
     def test_ratio_is_dimensionless(self):
-        assert pounds(50) .ratio_to(pounds(200)) == Decimal("0.25")
+        assert pounds(50).ratio_to(pounds(200)) == Decimal("0.25")
 
     def test_ratio_against_zero_is_refused(self):
         with pytest.raises(ValidationError):
@@ -131,7 +131,7 @@ class TestParsing:
 
 def test_repr_round_trips():
     w = pounds("48200.55")
-    assert eval(repr(w), {"Weight": Weight}) == w  # noqa: S307
+    assert eval(repr(w), {"Weight": Weight}) == w
 
 
 def test_str_reads_like_a_ticket_line():

@@ -23,7 +23,7 @@ from binyard.commodity import CropStandard
 from binyard.grading.factors import Direction, FactorName, FactorSample, Odor, direction_of
 from binyard.grading.tables import SAMPLE_GRADE, GradeRow, GradeTable, table_for
 
-__all__ = ["SpecialGrade", "LimitingFactor", "GradeResult", "determine"]
+__all__ = ["GradeResult", "LimitingFactor", "SpecialGrade", "determine"]
 
 
 class SpecialGrade(StrEnum):

@@ -33,7 +33,7 @@ from binyard.tickets.ticket import ScaleTicket, TicketKind
 from binyard.tickets.weights import ScaleWeights, TareSource
 from binyard.units import Weight
 
-__all__ = ["ShipmentRequest", "Shipment", "plan_shipment", "ship_next_load"]
+__all__ = ["Shipment", "ShipmentRequest", "plan_shipment", "ship_next_load"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -90,9 +90,7 @@ def plan_shipment(work: UnitOfWork, request: ShipmentRequest) -> Shipment:
         locked=request.locked_bins,
     )
     blend = plan_blend(request.spec, sources, objective=request.objective)
-    loads = split_into_loads(
-        request.spec.quantity, list(request.carriers), request.standard
-    )
+    loads = split_into_loads(request.spec.quantity, list(request.carriers), request.standard)
     return Shipment(order=request.order, blend=blend, loads=loads)
 
 
@@ -133,9 +131,7 @@ def ship_next_load(
     number = _next_number(work, sequence)
 
     for bin_identifier, amount in draws:
-        yard = yard.ship(
-            bin_identifier, amount, at=at, reference=str(number), by=by
-        )
+        yard = yard.ship(bin_identifier, amount, at=at, reference=str(number), by=by)
 
     released = _release_obligations(work, order.commodity_code, quantity, on, str(number))
 

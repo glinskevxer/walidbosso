@@ -49,9 +49,7 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     review.set_defaults(handler=_review)
 
     obligations = inner.add_parser("obligations", help="what the house owes")
-    obligations.add_argument(
-        "--all", action="store_true", help="include the closed ones"
-    )
+    obligations.add_argument("--all", action="store_true", help="include the closed ones")
     obligations.set_defaults(handler=_obligations)
 
 
@@ -59,9 +57,7 @@ def _position(context: Context, arguments: argparse.Namespace) -> int:
     report = position_on(context.work(), on=context.on, location=context.settings.location)
     context.emit(position_table(report))
     for short in report.shorts:
-        context.warn(
-            f"{short.commodity_code} is short by {abs(short.house_position)}"
-        )
+        context.warn(f"{short.commodity_code} is short by {abs(short.house_position)}")
     return 1 if report.shorts else 0
 
 
@@ -98,6 +94,8 @@ def _review(context: Context, arguments: argparse.Namespace) -> int:
 
 def _obligations(context: Context, arguments: argparse.Namespace) -> int:
     work = context.work()
-    held = list(work.obligations.as_of(context.on) if arguments.all else work.obligations.all_open())
+    held = list(
+        work.obligations.as_of(context.on) if arguments.all else work.obligations.all_open()
+    )
     context.emit(obligation_table(held, include_closed=arguments.all))
     return 0

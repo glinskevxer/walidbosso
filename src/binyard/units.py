@@ -25,10 +25,10 @@ __all__ = [
     "POUNDS_PER_CWT",
     "POUNDS_PER_TON",
     "Weight",
-    "pounds",
     "cwt",
-    "tons",
     "parse_weight",
+    "pounds",
+    "tons",
 ]
 
 HUNDREDTHS_PER_POUND: Final = 100

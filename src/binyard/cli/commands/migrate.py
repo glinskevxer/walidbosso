@@ -9,7 +9,7 @@ from binyard.reporting.table import Column, Table
 from binyard.store.migrate import migrate as apply_migrations
 from binyard.store.migrate import pending
 
-__all__ = ["register", "handle"]
+__all__ = ["handle", "register"]
 
 
 def register(subparsers: argparse._SubParsersAction) -> None:

@@ -180,8 +180,7 @@ class Reader:
                 "expected a list", field=self._where(name), got=type(value).__name__
             )
         return tuple(
-            Reader(item, f"{self._where(name)}[{index}]")
-            for index, item in enumerate(value)
+            Reader(item, f"{self._where(name)}[{index}]") for index, item in enumerate(value)
         )
 
     def strings(self, name: str, default: Any = _MISSING) -> tuple[str, ...]:
@@ -189,9 +188,7 @@ class Reader:
         if value is None:
             return ()
         if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
-            raise ValidationError(
-                "expected a list of strings", field=self._where(name)
-            )
+            raise ValidationError("expected a list of strings", field=self._where(name))
         return tuple(item.strip() for item in value if item.strip())
 
     def unexpected(self, *known: str) -> tuple[str, ...]:

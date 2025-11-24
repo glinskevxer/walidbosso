@@ -132,9 +132,7 @@ class Carrier:
         if self.volume_cubic_feet is None:
             return None
         density = standard.pounds_per_bushel / Decimal("1.2445")
-        return Weight.from_pounds(
-            (self.volume_cubic_feet * density).quantize(Decimal("0.01"))
-        )
+        return Weight.from_pounds((self.volume_cubic_feet * density).quantize(Decimal("0.01")))
 
 
 @dataclass(frozen=True, slots=True)

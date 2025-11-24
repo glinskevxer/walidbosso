@@ -103,7 +103,10 @@ class TestApplying:
         )
         exact = apply_shrink(bushels("1000"), percent("20.0"), NO_HANDLING)
         assert posted != NO_HANDLING
-        assert apply_shrink(bushels("1000"), percent("20.0"), posted).water_shrink > exact.water_shrink
+        assert (
+            apply_shrink(bushels("1000"), percent("20.0"), posted).water_shrink
+            > exact.water_shrink
+        )
 
     def test_a_threshold_holds_shrink_off_until_it_is_crossed(self):
         policy = ShrinkPolicy(

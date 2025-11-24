@@ -50,3 +50,17 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = [
+    # Every default built by a call here is a frozen value object: Percent.zero(),
+    # Bushels.zero(), Price.zero(). Sharing one instance across every dataclass
+    # that defaults to it is correct and intended, and the rule exists for
+    # mutable defaults, which this package does not have.
+    "RUF009",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Test modules import their own factories from conftest, which sits beside them
+# rather than on the package path, and assert on things a linter reads as unused.
+"tests/*" = ["E402"]
+# The seeder inserts src on the path before importing the package it seeds.
+"scripts/seed_demo.py" = ["E402"]

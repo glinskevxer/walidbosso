@@ -75,12 +75,18 @@ class TestBuilding:
         assert settled.net == settled.gross
 
     def test_a_charge_comes_off_however_it_is_signed(self):
-        positive = builder().grain(Price.of("4.52")).charge(
-            ChargeKind.STORAGE, "storage", dollars("12.00")
-        ).build()
-        negative = builder().grain(Price.of("4.52")).charge(
-            ChargeKind.STORAGE, "storage", dollars("-12.00")
-        ).build()
+        positive = (
+            builder()
+            .grain(Price.of("4.52"))
+            .charge(ChargeKind.STORAGE, "storage", dollars("12.00"))
+            .build()
+        )
+        negative = (
+            builder()
+            .grain(Price.of("4.52"))
+            .charge(ChargeKind.STORAGE, "storage", dollars("-12.00"))
+            .build()
+        )
         assert positive.net == negative.net
 
     def test_a_credit_cannot_be_pushed_through_charge(self):
@@ -88,25 +94,34 @@ class TestBuilding:
             builder().charge(ChargeKind.GRAIN, "grain", dollars("10"))
 
     def test_discounts_are_charged_on_the_settled_bushels(self):
-        settled = builder().grain(Price.of("4.52")).discount(
-            "moisture", Price.from_cents("6")
-        ).build()
+        settled = (
+            builder()
+            .grain(Price.of("4.52"))
+            .discount("moisture", Price.from_cents("6"))
+            .build()
+        )
         line = settled.lines_of(ChargeKind.DISCOUNT)[0]
         assert line.quantity == LOAD
         assert line.amount == dollars("-51.43")
 
     def test_drying_multiplies_the_rate_by_the_points(self):
-        settled = builder().grain(Price.of("4.52")).drying(
-            percent("5.0"), Price.from_cents("2")
-        ).build()
+        settled = (
+            builder()
+            .grain(Price.of("4.52"))
+            .drying(percent("5.0"), Price.from_cents("2"))
+            .build()
+        )
         line = settled.lines_of(ChargeKind.DRYING)[0]
         assert line.rate == Price.from_cents("10")
         assert "5% at $0.02 a point" in line.description
 
     def test_no_points_means_no_drying_line(self):
-        settled = builder().grain(Price.of("4.52")).drying(
-            percent("0"), Price.from_cents("2")
-        ).build()
+        settled = (
+            builder()
+            .grain(Price.of("4.52"))
+            .drying(percent("0"), Price.from_cents("2"))
+            .build()
+        )
         assert settled.lines_of(ChargeKind.DRYING) == ()
 
     def test_the_lines_come_out_in_the_fixed_order(self):

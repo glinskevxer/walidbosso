@@ -65,9 +65,7 @@ class TestSolving:
         assert found.objective_value == -36
 
     def test_equalities_are_satisfied_exactly(self):
-        found = solve(
-            program([1, 1], [([1, 1], Sense.EQ, 10), ([1, -1], Sense.EQ, 2)])
-        )
+        found = solve(program([1, 1], [([1, 1], Sense.EQ, 10), ([1, -1], Sense.EQ, 2)]))
         assert found.values == (F(6), F(4))
 
     def test_a_greater_than_row_is_honoured(self):

@@ -24,8 +24,8 @@ from binyard.errors import ValidationError
 
 __all__ = [
     "LocationCode",
-    "TicketNumber",
     "Sequence",
+    "TicketNumber",
     "crop_year_of",
     "crop_year_suffix",
 ]
@@ -80,9 +80,7 @@ class TicketNumber:
         if not isinstance(self.sequence, int) or isinstance(self.sequence, bool):
             raise ValidationError("a ticket sequence is an integer", got=repr(self.sequence))
         if not (1 <= self.sequence <= 999_999):
-            raise ValidationError(
-                "a ticket sequence runs from 1 to 999999", got=self.sequence
-            )
+            raise ValidationError("a ticket sequence runs from 1 to 999999", got=self.sequence)
         crop_year_suffix(self.crop_year)
 
     @classmethod

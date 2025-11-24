@@ -3,7 +3,6 @@ from datetime import date, datetime
 from decimal import Decimal
 
 import pytest
-from conftest import bin_for, yard_with
 
 from binyard.bushels import bushels
 from binyard.errors import ValidationError
@@ -23,6 +22,7 @@ from binyard.reporting import (
     to_json,
     to_text,
 )
+from conftest import bin_for, yard_with
 
 OPENED = date(2025, 10, 15)
 TODAY = date(2025, 11, 30)
@@ -54,9 +54,7 @@ def stocked_yard(quantity="10000"):
 
 class TestPosition:
     def test_an_empty_yard_with_no_obligations_reports_nothing(self):
-        report = build_position(
-            on=TODAY, location="WBS", yard=yard_with("N1"), obligations=[]
-        )
+        report = build_position(on=TODAY, location="WBS", yard=yard_with("N1"), obligations=[])
         assert report.positions == ()
         assert report.is_clean
 
@@ -65,9 +63,7 @@ class TestPosition:
             build_position(on=TODAY, location=" ", yard=yard_with("N1"), obligations=[])
 
     def test_grain_with_no_obligation_is_all_the_houses(self):
-        report = build_position(
-            on=TODAY, location="WBS", yard=stocked_yard(), obligations=[]
-        )
+        report = build_position(on=TODAY, location="WBS", yard=stocked_yard(), obligations=[])
         corn = report.position_for("CORN")
         assert corn.on_hand == bushels("10000")
         assert corn.owed_out == bushels("0")
@@ -76,18 +72,14 @@ class TestPosition:
 
     def test_open_storage_is_owed_out(self):
         held = [obligation("OS-1", ObligationKind.OPEN_STORAGE, "8000")]
-        report = build_position(
-            on=TODAY, location="WBS", yard=stocked_yard(), obligations=held
-        )
+        report = build_position(on=TODAY, location="WBS", yard=stocked_yard(), obligations=held)
         corn = report.position_for("CORN")
         assert corn.open_storage == bushels("8000")
         assert corn.house_position == bushels("2000")
 
     def test_owing_more_than_is_there_reads_short(self):
         held = [obligation("OS-1", ObligationKind.OPEN_STORAGE, "12000")]
-        report = build_position(
-            on=TODAY, location="WBS", yard=stocked_yard(), obligations=held
-        )
+        report = build_position(on=TODAY, location="WBS", yard=stocked_yard(), obligations=held)
         corn = report.position_for("CORN")
         assert corn.is_short
         assert corn.house_position == bushels("-2000")
@@ -96,9 +88,7 @@ class TestPosition:
 
     def test_deferred_price_grain_belongs_to_the_house(self):
         held = [obligation("DP-1", ObligationKind.DEFERRED_PRICE, "5000")]
-        report = build_position(
-            on=TODAY, location="WBS", yard=stocked_yard(), obligations=held
-        )
+        report = build_position(on=TODAY, location="WBS", yard=stocked_yard(), obligations=held)
         corn = report.position_for("CORN")
         assert corn.deferred_price == bushels("5000")
         assert corn.owed_out.is_zero()
@@ -106,16 +96,14 @@ class TestPosition:
 
     def test_a_cancelled_obligation_drops_out(self):
         held = [obligation("WR-1", ObligationKind.WAREHOUSE_RECEIPT, "5000").cancelled()]
-        report = build_position(
-            on=TODAY, location="WBS", yard=stocked_yard(), obligations=held
-        )
+        report = build_position(on=TODAY, location="WBS", yard=stocked_yard(), obligations=held)
         assert report.position_for("CORN").warehouse_receipts.is_zero()
 
     def test_an_obligation_opened_later_is_not_counted_yet(self):
-        held = [obligation("OS-1", ObligationKind.OPEN_STORAGE, "5000", opened_on=date(2026, 1, 1))]
-        report = build_position(
-            on=TODAY, location="WBS", yard=stocked_yard(), obligations=held
-        )
+        held = [
+            obligation("OS-1", ObligationKind.OPEN_STORAGE, "5000", opened_on=date(2026, 1, 1))
+        ]
+        report = build_position(on=TODAY, location="WBS", yard=stocked_yard(), obligations=held)
         assert report.position_for("CORN").open_storage.is_zero()
 
     def test_a_release_after_the_report_date_does_not_reduce_the_balance(self):
@@ -124,9 +112,7 @@ class TestPosition:
                 Release(date(2026, 1, 15), bushels("3000"), "LO-1")
             )
         ]
-        report = build_position(
-            on=TODAY, location="WBS", yard=stocked_yard(), obligations=held
-        )
+        report = build_position(on=TODAY, location="WBS", yard=stocked_yard(), obligations=held)
         assert report.position_for("CORN").open_storage == bushels("8000")
 
     def test_a_release_before_it_does(self):
@@ -135,9 +121,7 @@ class TestPosition:
                 Release(date(2025, 11, 1), bushels("3000"), "LO-1")
             )
         ]
-        report = build_position(
-            on=TODAY, location="WBS", yard=stocked_yard(), obligations=held
-        )
+        report = build_position(on=TODAY, location="WBS", yard=stocked_yard(), obligations=held)
         assert report.position_for("CORN").open_storage == bushels("5000")
 
     def test_a_pile_carries_its_allowance_as_its_own_line(self):
@@ -160,15 +144,11 @@ class TestPosition:
 
     def test_coverage_reads_as_a_ratio(self):
         held = [obligation("OS-1", ObligationKind.OPEN_STORAGE, "5000")]
-        report = build_position(
-            on=TODAY, location="WBS", yard=stocked_yard(), obligations=held
-        )
+        report = build_position(on=TODAY, location="WBS", yard=stocked_yard(), obligations=held)
         assert report.position_for("CORN").coverage() == Decimal("2")
 
     def test_coverage_is_undefined_with_nothing_owed(self):
-        report = build_position(
-            on=TODAY, location="WBS", yard=stocked_yard(), obligations=[]
-        )
+        report = build_position(on=TODAY, location="WBS", yard=stocked_yard(), obligations=[])
         assert report.position_for("CORN").coverage() is None
 
     def test_a_crop_with_obligations_and_no_inventory_still_appears(self):
@@ -242,9 +222,7 @@ class TestTables:
         assert to_csv(table, include_title=True).splitlines()[0] == "T"
 
     def test_json_uses_keys_not_headings(self):
-        table = Table(
-            title="T", columns=(Column("bin_id", "Bin"),), rows=({"bin_id": "N1"},)
-        )
+        table = Table(title="T", columns=(Column("bin_id", "Bin"),), rows=({"bin_id": "N1"},))
         payload = json.loads(to_json(table))
         assert payload["rows"] == [{"bin_id": "N1"}]
         assert payload["columns"][0]["heading"] == "Bin"
@@ -266,9 +244,7 @@ class TestTables:
 class TestReportBuilders:
     def test_the_position_table_has_a_row_per_crop(self):
         held = [obligation("OS-1", ObligationKind.OPEN_STORAGE, "8000")]
-        report = build_position(
-            on=TODAY, location="WBS", yard=stocked_yard(), obligations=held
-        )
+        report = build_position(on=TODAY, location="WBS", yard=stocked_yard(), obligations=held)
         table = position_table(report)
         assert len(table.rows) == 1
         assert table.rows[0]["commodity"] == "CORN"
@@ -276,9 +252,7 @@ class TestReportBuilders:
 
     def test_the_examiner_statement_shows_the_two_columns_and_the_difference(self):
         held = [obligation("OS-1", ObligationKind.OPEN_STORAGE, "8000")]
-        report = build_position(
-            on=TODAY, location="WBS", yard=stocked_yard(), obligations=held
-        )
+        report = build_position(on=TODAY, location="WBS", yard=stocked_yard(), obligations=held)
         table = examiner_statement(report)
         assert table.keys == (
             "commodity",
@@ -292,7 +266,7 @@ class TestReportBuilders:
     def test_the_bin_table_lists_empty_bins_too(self):
         table = bin_table(stocked_yard())
         assert len(table.rows) == 2
-        empty = [row for row in table.rows if row["identifier"] == "N2"][0]
+        empty = next(row for row in table.rows if row["identifier"] == "N2")
         assert empty["commodity"] is None
 
     def test_the_obligation_table_hides_closed_ones_by_default(self):
@@ -305,7 +279,11 @@ class TestReportBuilders:
 
     def test_the_obligation_table_runs_oldest_first(self):
         held = [
-            obligation("OS-2", ObligationKind.OPEN_STORAGE, "1000", opened_on=date(2025, 11, 1)),
-            obligation("OS-1", ObligationKind.OPEN_STORAGE, "1000", opened_on=date(2025, 10, 1)),
+            obligation(
+                "OS-2", ObligationKind.OPEN_STORAGE, "1000", opened_on=date(2025, 11, 1)
+            ),
+            obligation(
+                "OS-1", ObligationKind.OPEN_STORAGE, "1000", opened_on=date(2025, 10, 1)
+            ),
         ]
         assert [row["identifier"] for row in obligation_table(held).rows] == ["OS-1", "OS-2"]

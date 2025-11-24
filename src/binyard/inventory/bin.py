@@ -40,7 +40,7 @@ from binyard.errors import (
 from binyard.grading.factors import FactorSample, Odor
 from binyard.percent import Percent
 
-__all__ = ["BinKind", "Bin", "BinContents", "commingle", "commingle_many"]
+__all__ = ["Bin", "BinContents", "BinKind", "commingle", "commingle_many"]
 
 _ODOR_SEVERITY: dict[Odor, int] = {
     Odor.NONE: 0,
@@ -126,7 +126,9 @@ class BinContents:
     def is_empty(self) -> bool:
         return self.quantity.is_zero()
 
-    def add(self, structure: Bin, commodity_code: str, quantity: Bushels, quality: FactorSample) -> BinContents:
+    def add(
+        self, structure: Bin, commodity_code: str, quantity: Bushels, quality: FactorSample
+    ) -> BinContents:
         """Put a load in, averaging quality across what was already there."""
         if not quantity.is_positive():
             raise ValidationError("cannot add a non positive quantity", quantity=str(quantity))
@@ -221,12 +223,8 @@ def commingle_many(lots: list[tuple[FactorSample, int]]) -> FactorSample:
         )
         return Percent(int(mixed.quantize(Decimal("1"), rounding=ROUND_HALF_UP)))
 
-    test_weight = (
-        sum(sample.test_weight * weight for sample, weight in lots) / total
-    )
-    worst_odor = max(
-        (sample.odor for sample, _ in lots), key=lambda odor: _ODOR_SEVERITY[odor]
-    )
+    test_weight = sum(sample.test_weight * weight for sample, weight in lots) / total
+    worst_odor = max((sample.odor for sample, _ in lots), key=lambda odor: _ODOR_SEVERITY[odor])
     return FactorSample(
         **{name: blend(name) for name in _BLENDED},
         test_weight=test_weight.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP),
@@ -235,8 +233,6 @@ def commingle_many(lots: list[tuple[FactorSample, int]]) -> FactorSample:
     )
 
 
-def commingle(
-    left: tuple[FactorSample, int], right: tuple[FactorSample, int]
-) -> FactorSample:
+def commingle(left: tuple[FactorSample, int], right: tuple[FactorSample, int]) -> FactorSample:
     """Bushel weight two samples into one, taking the worst of what cannot average."""
     return commingle_many([left, right])

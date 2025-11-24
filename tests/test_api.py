@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-from datetime import date
 
 import httpx
 import pytest
@@ -342,18 +341,14 @@ class TestReports:
 
     def test_the_examiner_statement_can_be_csv(self, client):
         client.post("/tickets", json=load())
-        response = client.get(
-            f"/reports/examiner?on={DAY}", headers={"accept": "text/csv"}
-        )
+        response = client.get(f"/reports/examiner?on={DAY}", headers={"accept": "text/csv"})
         assert response.status_code == 200
         assert response.headers["content-type"].startswith("text/csv")
         assert response.text.splitlines()[0].startswith("Crop,")
 
     def test_the_examiner_statement_can_be_plain_text(self, client):
         client.post("/tickets", json=load())
-        response = client.get(
-            f"/reports/examiner?on={DAY}", headers={"accept": "text/plain"}
-        )
+        response = client.get(f"/reports/examiner?on={DAY}", headers={"accept": "text/plain"})
         assert "Warehouse examiner statement" in response.text
 
     def test_the_day_sheet_carries_all_four_tables(self, client):

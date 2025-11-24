@@ -126,5 +126,5 @@ class TestPrice:
 
 
 def test_reprs_round_trip():
-    assert eval(repr(dollars("12.34")), {"Money": Money}) == dollars("12.34")  # noqa: S307
-    assert eval(repr(price("4.5225")), {"Price": Price}) == price("4.5225")  # noqa: S307
+    assert eval(repr(dollars("12.34")), {"Money": Money}) == dollars("12.34")
+    assert eval(repr(price("4.5225")), {"Price": Price}) == price("4.5225")

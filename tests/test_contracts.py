@@ -94,7 +94,10 @@ class TestTolerance:
     def test_a_zero_tolerance_contract_has_to_be_exact(self):
         held = contract(tolerance=percent("0"))
         assert held.floor == held.ceiling == bushels("5000")
-        assert held.deliver(Delivery(DELIVERED_ON, "T-1", bushels("4999"))).fill_state is FillState.SHORT
+        assert (
+            held.deliver(Delivery(DELIVERED_ON, "T-1", bushels("4999"))).fill_state
+            is FillState.SHORT
+        )
 
     def test_remaining_never_goes_negative(self):
         held = contract().deliver(Delivery(DELIVERED_ON, "T-1", bushels("6000")))

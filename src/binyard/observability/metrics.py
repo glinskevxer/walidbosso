@@ -23,7 +23,7 @@ from dataclasses import dataclass, field
 
 from binyard.errors import ValidationError
 
-__all__ = ["Registry", "Sample", "REGISTRY", "counter", "gauge", "observe", "timed"]
+__all__ = ["REGISTRY", "Registry", "Sample", "counter", "gauge", "observe", "timed"]
 
 _NAME_CHARS = set("abcdefghijklmnopqrstuvwxyz0123456789_")
 
@@ -205,9 +205,7 @@ def _labels(labels: dict[str, str]) -> tuple[tuple[str, str], ...]:
     return tuple(sorted((key, str(value)) for key, value in labels.items()))
 
 
-def _with_label(
-    labels: tuple[tuple[str, str], ...], key: str, value: str
-) -> str:
+def _with_label(labels: tuple[tuple[str, str], ...], key: str, value: str) -> str:
     combined = (*labels, (key, value))
     inner = ",".join(f'{name}="{_escape(item)}"' for name, item in combined)
     return "{" + inner + "}"

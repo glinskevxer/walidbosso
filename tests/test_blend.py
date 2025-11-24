@@ -118,9 +118,7 @@ class TestPlanning:
         assert plan.bins_touched == 1
 
     def test_a_wet_bin_and_a_dry_one_meet_in_the_middle(self):
-        plan = plan_blend(
-            moisture_spec(), (source("N1", "13.0"), source("N2", "16.0"))
-        )
+        plan = plan_blend(moisture_spec(), (source("N1", "13.0"), source("N2", "16.0")))
         assert plan.quantity == bushels("50000")
         assert plan.quality.moisture <= percent("14.5")
 
@@ -132,7 +130,10 @@ class TestPlanning:
         assert plan.quantity == bushels("47331.17")
 
     def test_no_bin_gives_more_than_it_holds(self):
-        sources = (source("N1", "13.0", available="26000"), source("N2", "16.0", available="40000"))
+        sources = (
+            source("N1", "13.0", available="26000"),
+            source("N2", "16.0", available="40000"),
+        )
         plan = plan_blend(moisture_spec(), sources)
         for offer in sources:
             assert plan.draw_from(offer.identifier) <= offer.available
@@ -165,9 +166,7 @@ class TestPlanning:
 
     def test_all_of_it_too_wet_is_infeasible(self):
         with pytest.raises(InfeasibleBlend) as caught:
-            plan_blend(
-                moisture_spec(), (source("N1", "16.0"), source("N2", "17.0"))
-            )
+            plan_blend(moisture_spec(), (source("N1", "16.0"), source("N2", "17.0")))
         assert caught.value.detail["wanted"] == "50000.00 bu"
 
     def test_nothing_offered_is_infeasible(self):
@@ -220,7 +219,9 @@ class TestQualityAndMargins:
             moisture_spec(quantity="40000"),
             (source("N1", "13.0", available="30000"), source("N2", "16.0", available="10000")),
         )
-        assert plan.quality.moisture == percent("14.5") or plan.quality.moisture < percent("14.5")
+        assert plan.quality.moisture == percent("14.5") or plan.quality.moisture < percent(
+            "14.5"
+        )
 
     def test_the_margin_shows_the_room_left(self):
         plan = plan_blend(moisture_spec(), (source("N1", "13.0", available="60000"),))

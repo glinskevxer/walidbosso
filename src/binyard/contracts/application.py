@@ -32,7 +32,7 @@ from binyard.bushels import Bushels
 from binyard.contracts.contract import ContractStatus, PurchaseContract
 from binyard.errors import ValidationError
 
-__all__ = ["Priority", "Allocation", "ApplicationPlan", "plan_application"]
+__all__ = ["Allocation", "ApplicationPlan", "Priority", "plan_application"]
 
 
 class Priority(StrEnum):
@@ -123,9 +123,7 @@ def eligible(
     ]
 
 
-def _ordered(
-    contracts: list[PurchaseContract], priority: Priority
-) -> list[PurchaseContract]:
+def _ordered(contracts: list[PurchaseContract], priority: Priority) -> list[PurchaseContract]:
     if priority is Priority.AS_LISTED:
         return list(contracts)
     if priority is Priority.EARLIEST_DEADLINE:
@@ -153,9 +151,7 @@ def plan_application(
 ) -> ApplicationPlan:
     """Work out where one graded load should go, without writing anything."""
     if not quantity.is_positive():
-        raise ValidationError(
-            "cannot apply a non positive quantity", ticket=ticket_number
-        )
+        raise ValidationError("cannot apply a non positive quantity", ticket=ticket_number)
 
     candidates = _ordered(eligible(contracts, account, commodity_code, on), priority)
     allocations: list[Allocation] = []

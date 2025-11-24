@@ -27,7 +27,7 @@ from binyard.grading.factors import FactorName
 from binyard.grading.grade import GradeResult
 from binyard.money import Money, Price
 
-__all__ = ["DiscountLine", "Assessment", "assess"]
+__all__ = ["Assessment", "DiscountLine", "assess"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -170,9 +170,7 @@ def _grade_charges(
         return True
     if not result.limiting:
         return True
-    return any(
-        schedule.schedule_for(item.factor) is None for item in result.limiting
-    )
+    return any(schedule.schedule_for(item.factor) is None for item in result.limiting)
 
 
 def _band_note(posted, reading) -> str:

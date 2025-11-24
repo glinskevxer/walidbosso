@@ -25,7 +25,7 @@ from enum import StrEnum
 from binyard.errors import ValidationError
 from binyard.units import Weight
 
-__all__ = ["TareSource", "ScaleWeights", "split_weights", "STORED_TARE_MAX_AGE"]
+__all__ = ["STORED_TARE_MAX_AGE", "ScaleWeights", "TareSource", "split_weights"]
 
 #: A tare taken more than this long before the gross has to be re-weighed.
 STORED_TARE_MAX_AGE = timedelta(hours=12)
@@ -71,11 +71,13 @@ class ScaleWeights:
                 gross=str(self.gross),
                 tare=str(self.tare),
             )
-        if self.gross_at is not None and self.tare_at is not None:
-            if self.tare_source is TareSource.WEIGHED and self.tare_at > self.gross_at:
-                raise ValidationError(
-                    "a weighed tare cannot be later than the gross it belongs to"
-                )
+        if (
+            self.gross_at is not None
+            and self.tare_at is not None
+            and self.tare_source is TareSource.WEIGHED
+            and self.tare_at > self.gross_at
+        ):
+            raise ValidationError("a weighed tare cannot be later than the gross it belongs to")
 
     @property
     def net(self) -> Weight:
@@ -107,11 +109,15 @@ class ScaleWeights:
             reasons.append("tare declared by the driver")
         if self.tare_is_stale:
             age = self.tare_age
-            said = "unknown age" if age is None else f"{age.total_seconds() / 3600:.1f} hours old"
+            said = (
+                "unknown age" if age is None else f"{age.total_seconds() / 3600:.1f} hours old"
+            )
             reasons.append(f"stored tare is {said}")
         return tuple(reasons)
 
-    def with_tare(self, tare: Weight, source: TareSource, at: datetime | None = None) -> ScaleWeights:
+    def with_tare(
+        self, tare: Weight, source: TareSource, at: datetime | None = None
+    ) -> ScaleWeights:
         """Re-tare, which is what happens when a driver comes back to the scale."""
         return ScaleWeights(
             gross=self.gross,

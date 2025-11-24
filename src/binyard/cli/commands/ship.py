@@ -173,7 +173,15 @@ def _order_table(order: LoadoutOrder) -> Table:
     described = order.describe()
     rows = [
         {"field": key, "value": described[key]}
-        for key in ("identifier", "destination", "commodity", "quantity", "shipped", "remaining", "status")
+        for key in (
+            "identifier",
+            "destination",
+            "commodity",
+            "quantity",
+            "shipped",
+            "remaining",
+            "status",
+        )
     ]
     return Table(
         title=f"Order {order.identifier}",

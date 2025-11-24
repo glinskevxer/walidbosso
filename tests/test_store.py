@@ -12,7 +12,6 @@ from datetime import date, datetime
 from decimal import Decimal
 
 import pytest
-from conftest import LOCATION, bin_for, graded_ticket, sample_for, ticket_for
 
 from binyard.bushels import bushels
 from binyard.contracts import Delivery, PriceKind, PurchaseContract
@@ -25,6 +24,7 @@ from binyard.percent import percent
 from binyard.settlement import ChargeKind, SettlementBuilder
 from binyard.store import MemoryUnitOfWork, SqliteUnitOfWork
 from binyard.store.protocol import ContractStore, ObligationStore, TicketStore
+from conftest import LOCATION, bin_for, graded_ticket, sample_for, ticket_for
 
 DAY = date(2025, 10, 14)
 MORNING = datetime(2025, 10, 14, 8, 0)
@@ -166,9 +166,9 @@ class TestObligations:
         assert fetched.releases[0].reference == "LO-1"
 
     def test_a_priced_contract_keeps_its_price(self, work):
-        priced = obligation(
-            identifier="DP-1", kind=ObligationKind.DEFERRED_PRICE
-        ).priced(Price.of("4.5225"), date(2026, 2, 10))
+        priced = obligation(identifier="DP-1", kind=ObligationKind.DEFERRED_PRICE).priced(
+            Price.of("4.5225"), date(2026, 2, 10)
+        )
         work.obligations.add(priced)
         assert work.obligations.get("DP-1").priced_at == Price.of("4.5225")
 
@@ -260,9 +260,7 @@ class TestSettlements:
         work.commit()
         fetched = work.settlements.get("S-1")
         assert fetched.net == settlement.net
-        assert [line.kind for line in fetched.lines] == [
-            line.kind for line in settlement.lines
-        ]
+        assert [line.kind for line in fetched.lines] == [line.kind for line in settlement.lines]
 
     def test_a_duplicate_number_is_a_conflict(self, work):
         work.settlements.add(self._settlement())

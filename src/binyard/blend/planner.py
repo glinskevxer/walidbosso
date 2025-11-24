@@ -50,7 +50,7 @@ from binyard.errors import InfeasibleBlend, ValidationError
 from binyard.grading.factors import FactorSample
 from binyard.inventory.bin import commingle_many
 
-__all__ = ["Objective", "Draw", "BlendPlan", "plan_blend"]
+__all__ = ["BlendPlan", "Draw", "Objective", "plan_blend"]
 
 
 class Objective(StrEnum):
@@ -131,11 +131,7 @@ def plan_blend(
     costs: dict[str, Decimal] | None = None,
 ) -> BlendPlan:
     """Find a draw list that fills the order and makes the spec."""
-    usable = [
-        source
-        for source in sources
-        if source.usable and spec.admits(source.quality)
-    ]
+    usable = [source for source in sources if source.usable and spec.admits(source.quality)]
     if not usable:
         raise InfeasibleBlend(
             "no bin is both available and inside the reject limits",
@@ -209,8 +205,7 @@ def _solve_for(
         )
     for limit in spec.limits:
         coefficients = tuple(
-            Fraction(source.reading(limit.factor)) - Fraction(limit.limit)
-            for source in sources
+            Fraction(source.reading(limit.factor)) - Fraction(limit.limit) for source in sources
         )
         # See the module docstring: tightening by the row's own weight is the
         # exact bound on how far rounding every draw can move the average.
@@ -240,9 +235,7 @@ def _costs_for(
 ) -> tuple[Fraction, ...]:
     if objective is Objective.EXPLICIT_COST:
         assert costs is not None
-        return tuple(
-            Fraction(costs.get(source.identifier, Decimal(0))) for source in sources
-        )
+        return tuple(Fraction(costs.get(source.identifier, Decimal(0))) for source in sources)
     sign = Fraction(-1) if objective is Objective.SHIP_WORST_FIRST else Fraction(1)
     return tuple(sign * _defect_score(spec, source) for source in sources)
 
@@ -273,9 +266,7 @@ def _to_draws(
     floors = [value.numerator // value.denominator for value in values]
     remainders = [value - floor for value, floor in zip(values, floors, strict=True)]
     shortfall = wanted.hundredths - sum(floors)
-    order = sorted(
-        range(len(values)), key=lambda index: (-remainders[index], index)
-    )
+    order = sorted(range(len(values)), key=lambda index: (-remainders[index], index))
     for index in order[: max(shortfall, 0)]:
         floors[index] += 1
     return [
@@ -287,8 +278,5 @@ def _to_draws(
 def _blended_quality(sources: list[BlendSource], draws: tuple[Draw, ...]) -> FactorSample:
     by_identifier = {source.identifier: source for source in sources}
     return commingle_many(
-        [
-            (by_identifier[draw.identifier].quality, draw.quantity.hundredths)
-            for draw in draws
-        ]
+        [(by_identifier[draw.identifier].quality, draw.quantity.hundredths) for draw in draws]
     )

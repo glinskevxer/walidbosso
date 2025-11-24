@@ -29,7 +29,7 @@ from binyard.reporting.table import Column, Table
 from binyard.store.protocol import UnitOfWork
 from binyard.tickets.ticket import ScaleTicket, TicketStatus
 
-__all__ = ["DaySheet", "position_on", "examiner_report", "day_sheet", "review_queue"]
+__all__ = ["DaySheet", "day_sheet", "examiner_report", "position_on", "review_queue"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,9 +59,7 @@ class DaySheet:
         }
 
 
-def position_on(
-    work: UnitOfWork, *, on: date, location: LocationCode | str
-) -> PositionReport:
+def position_on(work: UnitOfWork, *, on: date, location: LocationCode | str) -> PositionReport:
     """The position as it stood at the end of ``on``."""
     return build_position(
         on=on,
@@ -156,9 +154,7 @@ def _ticket_table(tickets: tuple[ScaleTicket, ...], on: date) -> Table:
                 "commodity": ticket.commodity_code,
                 "net": None if net is None else str(net),
                 "grade": None if ticket.grade is None else ticket.grade.label,
-                "moisture": None
-                if ticket.sample is None
-                else str(ticket.sample.moisture),
+                "moisture": None if ticket.sample is None else str(ticket.sample.moisture),
                 "status": ticket.status.value,
             }
         )

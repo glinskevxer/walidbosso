@@ -33,7 +33,7 @@ from binyard.errors import ValidationError
 from binyard.money import Money, Price
 from binyard.percent import Percent
 
-__all__ = ["ChargeKind", "Checkoff", "StatementLine", "Settlement", "SettlementBuilder"]
+__all__ = ["ChargeKind", "Checkoff", "Settlement", "SettlementBuilder", "StatementLine"]
 
 
 class ChargeKind(StrEnum):
@@ -268,9 +268,7 @@ class SettlementBuilder:
         )
 
     def build(self) -> Settlement:
-        ordered = sorted(
-            self._lines, key=lambda line: (_ORDER[line.kind], line.description)
-        )
+        ordered = sorted(self._lines, key=lambda line: (_ORDER[line.kind], line.description))
         return Settlement(
             number=self._number,
             account=self._account,

@@ -564,8 +564,15 @@ def test_the_format_flag_is_honoured_everywhere(database):
     stocked(database)
     for output_format in OutputFormat:
         code, out, _ = invoke(
-            database, "--format", output_format.value, "--on", "2025-10-14", "report", "day",
-            "--only", "bins",
+            database,
+            "--format",
+            output_format.value,
+            "--on",
+            "2025-10-14",
+            "report",
+            "day",
+            "--only",
+            "bins",
         )
         assert code == 0
         assert out.strip()

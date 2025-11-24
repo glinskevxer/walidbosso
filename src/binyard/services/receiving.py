@@ -42,7 +42,7 @@ from binyard.store.protocol import UnitOfWork
 from binyard.tickets.ticket import ScaleTicket, TicketKind
 from binyard.tickets.weights import ScaleWeights
 
-__all__ = ["ReceiptRequest", "Receipt", "receive_load"]
+__all__ = ["Receipt", "ReceiptRequest", "receive_load"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -129,9 +129,7 @@ def receive_load(
         raise TicketError(
             "the board rejects that load outright",
             factor=(
-                assessment.rejecting_factor.value
-                if assessment.rejecting_factor
-                else "unknown"
+                assessment.rejecting_factor.value if assessment.rejecting_factor else "unknown"
             ),
             number=str(number),
         )
@@ -183,9 +181,7 @@ def receive_load(
     if plan.to_storage.is_positive():
         obligation = _store_the_rest(work, request, standard, plan.to_storage, number)
 
-    ticket = ticket.applied(
-        at=request.at, by=request.by, note=f"{len(filled)} contract lines"
-    )
+    ticket = ticket.applied(at=request.at, by=request.by, note=f"{len(filled)} contract lines")
     work.tickets.add(ticket)
     work.yard.save(yard)
     work.commit()

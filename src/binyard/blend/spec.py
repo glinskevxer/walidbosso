@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
+from typing import Final
 
 from binyard.bushels import Bushels
 from binyard.errors import ValidationError
@@ -25,7 +26,9 @@ from binyard.grading.factors import Direction, FactorName, FactorSample, directi
 from binyard.grading.tables import table_for
 from binyard.inventory.yard import BinState
 
-__all__ = ["SpecLimit", "BlendSpec", "BlendSource", "sources_from"]
+__all__ = ["BlendSource", "BlendSpec", "SpecLimit", "sources_from"]
+
+NOTHING: Final = Bushels.zero()
 
 
 @dataclass(frozen=True, slots=True)
@@ -167,7 +170,7 @@ def sources_from(
     states: tuple[BinState, ...],
     commodity_code: str,
     *,
-    minimum_draw: Bushels = Bushels.zero(),
+    minimum_draw: Bushels = NOTHING,
     locked: frozenset[str] = frozenset(),
 ) -> tuple[BlendSource, ...]:
     """Turn the yard's bins into offers, skipping the ones with nothing to give."""

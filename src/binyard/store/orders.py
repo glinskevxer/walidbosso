@@ -20,7 +20,7 @@ from binyard.errors import Conflict, NotFound
 from binyard.loadout.order import Load, LoadoutOrder, OrderStatus
 from binyard.store.mappers import as_date
 
-__all__ = ["OrderStore", "SqliteOrderStore", "MemoryOrderStore"]
+__all__ = ["MemoryOrderStore", "OrderStore", "SqliteOrderStore"]
 
 
 class OrderStore:
@@ -81,7 +81,8 @@ class SqliteOrderStore(OrderStore):
 
     def open_orders(self) -> tuple[LoadoutOrder, ...]:
         rows = self._connection.execute(
-            "SELECT * FROM loadout_orders WHERE status IN (?, ?) ORDER BY ship_from, identifier",
+            "SELECT * FROM loadout_orders WHERE status IN (?, ?)"
+            " ORDER BY ship_from, identifier",
             (OrderStatus.OPEN.value, OrderStatus.LOADING.value),
         ).fetchall()
         return tuple(self._order(row) for row in rows)

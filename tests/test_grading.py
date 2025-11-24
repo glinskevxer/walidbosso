@@ -221,9 +221,7 @@ class TestDockageRebasing:
         }
         clean = determine(FactorSample(**readings), commodity.HRW_WHEAT)
         assert clean.grade == 1
-        dirty = determine(
-            FactorSample(**readings, dockage=percent("3.0")), commodity.HRW_WHEAT
-        )
+        dirty = determine(FactorSample(**readings, dockage=percent("3.0")), commodity.HRW_WHEAT)
         assert dirty.grade == 2
         assert dirty.binding_factor is FactorName.FOREIGN_MATERIAL
 

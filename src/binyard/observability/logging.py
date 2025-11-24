@@ -26,7 +26,8 @@ from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 from datetime import UTC, datetime
-from typing import Any
+from types import MappingProxyType
+from typing import Any, Final
 
 __all__ = [
     "EventLogger",
@@ -40,7 +41,12 @@ __all__ = [
     "get_logger",
 ]
 
-_CONTEXT: ContextVar[dict[str, Any]] = ContextVar("binyard_log_context", default={})
+#: Empty and immutable. A ContextVar default is shared by every context that
+#: never set one, so a mutable default would let one request's fields leak into
+#: another's.
+_EMPTY: Final[Mapping[str, Any]] = MappingProxyType({})
+
+_CONTEXT: ContextVar[Mapping[str, Any]] = ContextVar("binyard_log_context", default=_EMPTY)
 
 _RESERVED = frozenset(
     {
@@ -181,7 +187,7 @@ def bind(**fields: Any) -> None:
 
 
 def clear() -> None:
-    _CONTEXT.set({})
+    _CONTEXT.set(_EMPTY)
 
 
 def current() -> Mapping[str, Any]:

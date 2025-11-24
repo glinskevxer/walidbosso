@@ -32,7 +32,7 @@ from binyard.errors import ValidationError
 from binyard.money import Money, Price
 from binyard.obligations.obligation import StorageObligation
 
-__all__ = ["Accrual", "StorageTerms", "StorageSegment", "StorageAssessment", "accrue"]
+__all__ = ["Accrual", "StorageAssessment", "StorageSegment", "StorageTerms", "accrue"]
 
 _DAYS_PER_MONTH = Decimal("30.4375")
 
@@ -155,8 +155,7 @@ def accrue(
     )
 
     boundaries = sorted(
-        {start, through}
-        | {r.on for r in obligation.releases if start < r.on < through}
+        {start, through} | {r.on for r in obligation.releases if start < r.on < through}
     )
     segments: list[StorageSegment] = []
     total = Money.zero()
@@ -200,7 +199,5 @@ def _charge(rate: Price, balance: Bushels, months: Decimal) -> Money:
     # ticks are ten-thousandths of a dollar and hundredths are hundredths of a
     # bushel, so the product is in hundred-millionths of a dollar; cents need a
     # further hundred, which leaves ten thousand.
-    exact = (
-        Decimal(rate.ticks) * Decimal(balance.hundredths) * months / Decimal(10_000)
-    )
+    exact = Decimal(rate.ticks) * Decimal(balance.hundredths) * months / Decimal(10_000)
     return Money(int(exact.quantize(Decimal("1"), rounding=ROUND_HALF_UP)))

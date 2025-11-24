@@ -26,7 +26,7 @@ from enum import StrEnum
 from binyard.errors import FactorOutOfRange, ValidationError
 from binyard.percent import Percent
 
-__all__ = ["Direction", "FactorName", "Odor", "FactorSample", "direction_of"]
+__all__ = ["Direction", "FactorName", "FactorSample", "Odor", "direction_of"]
 
 
 class FactorName(StrEnum):
