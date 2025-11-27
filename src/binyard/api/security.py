@@ -149,9 +149,7 @@ async def _refuse(send: Send, status: int, code: str, message: str) -> None:
     response = JSONResponse(
         {"code": code, "message": message, "detail": {}}, status_code=status
     )
-    await response(  # type: ignore[call-arg]
-        {"type": "http"}, _no_body, send
-    )
+    await response({"type": "http"}, _no_body, send)
 
 
 async def _no_body() -> Message:  # pragma: no cover - responses never read a body

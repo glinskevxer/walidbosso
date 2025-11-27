@@ -128,15 +128,16 @@ def _ordered(contracts: list[PurchaseContract], priority: Priority) -> list[Purc
         return list(contracts)
     if priority is Priority.EARLIEST_DEADLINE:
         return sorted(contracts, key=lambda c: (c.delivery_to, c.identifier))
-    ranked = sorted(
-        contracts,
-        key=lambda c: (
-            0 if c.is_priced else 1,
-            -(c.price().ticks if c.price() is not None else 0),
-            c.identifier,
-        ),
-    )
-    return ranked
+
+    def ordering(contract: PurchaseContract) -> tuple[int, int, str]:
+        settled = contract.price()
+        return (
+            0 if settled is not None else 1,
+            -(settled.ticks if settled else 0),
+            contract.identifier,
+        )
+
+    return sorted(contracts, key=ordering)
 
 
 def plan_application(

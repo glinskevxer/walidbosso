@@ -131,6 +131,8 @@ def weighted_average(pairs: list[tuple[Percent, int]]) -> Percent:
     total_weight = sum(weight for _, weight in pairs)
     if total_weight <= 0:
         raise ValidationError("weights must sum to something positive", total=total_weight)
-    numerator = sum(Decimal(value.hundredths) * weight for value, weight in pairs)
+    numerator = Decimal(0)
+    for value, weight in pairs:
+        numerator += Decimal(value.hundredths) * weight
     quotient = numerator / total_weight
     return Percent(int(quotient.quantize(Decimal("1"), rounding=ROUND_HALF_UP)))

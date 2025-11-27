@@ -134,8 +134,8 @@ def solve(program: LinearProgram, *, iteration_limit: int = 10_000) -> Solution:
 
     artificial_start = structural + extra
     artificial_count = 0
-    for index, row in enumerate(rows):
-        if row.sense in {Sense.GE, Sense.EQ}:
+    for index, candidate in enumerate(rows):
+        if candidate.sense in {Sense.GE, Sense.EQ}:
             artificial_of[index] = artificial_count
             artificial_count += 1
 
@@ -191,9 +191,9 @@ def solve(program: LinearProgram, *, iteration_limit: int = 10_000) -> Solution:
         return Solution(status=Status.UNBOUNDED, iterations=iterations)
 
     values = [Fraction(0)] * structural
-    for row, column in enumerate(basis):
+    for position, column in enumerate(basis):
         if column < structural:
-            values[column] = tableau[row][width]
+            values[column] = tableau[position][width]
     return Solution(
         status=Status.OPTIMAL,
         values=tuple(values),

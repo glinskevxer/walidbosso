@@ -12,6 +12,7 @@ the two columns and the difference. Everything else on the page is for us.
 from __future__ import annotations
 
 from datetime import date
+from typing import Any
 
 from binyard.blend.planner import BlendPlan
 from binyard.discounts.apply import Assessment
@@ -64,7 +65,7 @@ def examiner_statement(report: PositionReport) -> Table:
     )
     rows = []
     for position in report.positions:
-        described = position.describe()
+        described: dict[str, Any] = position.describe()
         rows.append(
             {
                 "commodity": described["commodity"],
@@ -95,7 +96,7 @@ def bin_table(yard: Yard) -> Table:
     )
     rows = []
     for state in yard.states():
-        described = state.describe()
+        described: dict[str, Any] = state.describe()
         contents = described["contents"]
         quality = contents["quality"]
         rows.append(
@@ -135,7 +136,7 @@ def obligation_table(
     kept.sort(key=lambda obligation: (obligation.opened_on, obligation.identifier))
     rows = []
     for obligation in kept:
-        described = obligation.describe()
+        described: dict[str, Any] = obligation.describe()
         rows.append({key: described[key] for key in dict.fromkeys(c.key for c in columns)})
     return Table(title="Storage obligations", columns=columns, rows=tuple(rows))
 
@@ -169,8 +170,8 @@ def blend_table(plan: BlendPlan) -> Table:
         Column("bin", "Bin"),
         Column.number("quantity", "Draw"),
     )
-    described = plan.describe()
-    footers = [{"bin": "total", "quantity": described["quantity"]}]
+    described: dict[str, Any] = plan.describe()
+    footers: list[dict[str, Any]] = [{"bin": "total", "quantity": described["quantity"]}]
     for factor, margin in described["margins"].items():
         footers.append({"bin": f"{factor} margin", "quantity": margin})
     return Table(
@@ -190,7 +191,7 @@ def discount_table(assessment: Assessment) -> Table:
         Column.number("amount", "Amount"),
         Column("note", "Band"),
     )
-    described = assessment.describe()
+    described: dict[str, Any] = assessment.describe()
     footers = (
         {"source": "total", "rate": described["total_rate"], "amount": described["total"]},
     )

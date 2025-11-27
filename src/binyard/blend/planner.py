@@ -194,11 +194,11 @@ def _solve_for(
         )
     ]
     for index, source in enumerate(sources):
-        coefficients = [Fraction(0)] * width
-        coefficients[index] = Fraction(1)
+        column = [Fraction(0)] * width
+        column[index] = Fraction(1)
         rows.append(
             Constraint(
-                coefficients=tuple(coefficients),
+                coefficients=tuple(column),
                 sense=Sense.LE,
                 rhs=Fraction(source.available.hundredths),
             )

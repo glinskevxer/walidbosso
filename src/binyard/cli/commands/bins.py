@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from typing import Any
 
 from binyard.bushels import bushels
 from binyard.cli.context import Context
@@ -69,7 +70,7 @@ def handle_list(context: Context, arguments: argparse.Namespace) -> int:
 def handle_show(context: Context, arguments: argparse.Namespace) -> int:
     work = context.work()
     state = work.yard.load().state_of(arguments.identifier)
-    described = state.describe()
+    described: dict[str, Any] = state.describe()
     contents = described["contents"]
     quality = contents["quality"] or {}
     rows = [

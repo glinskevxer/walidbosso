@@ -23,6 +23,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
+from enum import StrEnum
 from typing import Any, TypeVar
 
 from binyard.bushels import Bushels
@@ -33,7 +34,7 @@ from binyard.units import Weight, parse_weight
 
 __all__ = ["Reader", "reader_for"]
 
-T = TypeVar("T")
+E = TypeVar("E", bound=StrEnum)
 
 _MISSING = object()
 
@@ -131,19 +132,18 @@ class Reader:
                 "expected an ISO timestamp", field=self._where(name), got=repr(value)
             ) from exc
 
-    def choice(self, name: str, options: type[T], default: Any = _MISSING) -> T:
+    def choice(self, name: str, options: type[E], default: Any = _MISSING) -> E:
         value = self._raw(name, default)
-        if isinstance(value, options):  # type: ignore[arg-type]
-            return value  # type: ignore[return-value]
+        if isinstance(value, options):
+            return value
         try:
-            return options(str(value))  # type: ignore[call-arg]
+            return options(str(value))
         except ValueError as exc:
-            allowed = [item.value for item in options]  # type: ignore[attr-defined]
             raise ValidationError(
                 "not one of the allowed values",
                 field=self._where(name),
                 got=repr(value),
-                allowed=allowed,
+                allowed=[item.value for item in options],
             ) from exc
 
     # -- domain types ----------------------------------------------------

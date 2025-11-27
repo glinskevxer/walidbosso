@@ -64,3 +64,35 @@ ignore = [
 "tests/*" = ["E402"]
 # The seeder inserts src on the path before importing the package it seeds.
 "scripts/seed_demo.py" = ["E402"]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src/binyard"]
+strict_equality = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
+no_implicit_optional = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+# Starlette ships types, gunicorn does not, and neither is worth a stub package
+# for the three call sites that touch them.
+module = ["gunicorn.*", "uvicorn.*"]
+ignore_missing_imports = true
+
+[tool.coverage.run]
+branch = true
+source = ["binyard"]
+omit = ["*/cli/main.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "\\.\\.\\.",
+]

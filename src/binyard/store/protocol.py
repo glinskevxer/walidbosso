@@ -137,14 +137,30 @@ class UnitOfWork(Protocol):
     the end. Leaving the context manager without committing rolls back, which
     means a service that raises halfway through a two obligation transfer
     cannot leave one side of it written.
+
+    The stores are read-only properties rather than plain attributes. A
+    protocol attribute is invariant, so declaring ``tickets: TicketStore``
+    would refuse a backend whose attribute is typed as its own concrete store,
+    which is every backend there is.
     """
 
-    tickets: TicketStore
-    obligations: ObligationStore
-    contracts: ContractStore
-    settlements: SettlementStore
-    orders: OrderStore
-    yard: YardStore
+    @property
+    def tickets(self) -> TicketStore: ...
+
+    @property
+    def obligations(self) -> ObligationStore: ...
+
+    @property
+    def contracts(self) -> ContractStore: ...
+
+    @property
+    def settlements(self) -> SettlementStore: ...
+
+    @property
+    def orders(self) -> OrderStore: ...
+
+    @property
+    def yard(self) -> YardStore: ...
 
     def __enter__(self) -> UnitOfWork: ...
 

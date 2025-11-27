@@ -142,13 +142,13 @@ def settle_tickets(
                 raise ValidationError(
                     "that obligation belongs to another account", obligation=identifier
                 )
-            found = accrue(obligation, request.storage_terms, request.on)
-            if found.total.is_zero():
+            accrued = accrue(obligation, request.storage_terms, request.on)
+            if accrued.total.is_zero():
                 continue
             builder.charge(
                 ChargeKind.STORAGE,
                 f"storage on {identifier} through {request.on.isoformat()}",
-                found.total,
+                accrued.total,
             )
 
     for checkoff in request.checkoffs:

@@ -214,16 +214,16 @@ def commingle_many(lots: list[tuple[FactorSample, int]]) -> FactorSample:
         raise ValidationError("cannot commingle nothing with nothing")
 
     def blend(attribute: str) -> Percent:
-        mixed = (
-            sum(
-                Decimal(getattr(sample, attribute).hundredths) * weight
-                for sample, weight in lots
-            )
-            / total
-        )
+        running = Decimal(0)
+        for sample, weight in lots:
+            running += Decimal(getattr(sample, attribute).hundredths) * weight
+        mixed = running / total
         return Percent(int(mixed.quantize(Decimal("1"), rounding=ROUND_HALF_UP)))
 
-    test_weight = sum(sample.test_weight * weight for sample, weight in lots) / total
+    weighted = Decimal(0)
+    for sample, weight in lots:
+        weighted += sample.test_weight * weight
+    test_weight = weighted / total
     worst_odor = max((sample.odor for sample, _ in lots), key=lambda odor: _ODOR_SEVERITY[odor])
     return FactorSample(
         **{name: blend(name) for name in _BLENDED},

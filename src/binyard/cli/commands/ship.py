@@ -23,7 +23,7 @@ import argparse
 from datetime import datetime
 
 from binyard.blend.planner import Objective
-from binyard.bushels import bushels
+from binyard.bushels import Bushels, bushels
 from binyard.cli.commands.blend import build_spec
 from binyard.cli.context import Context
 from binyard.commodity import lookup
@@ -202,7 +202,7 @@ def _carrier(text: str) -> Carrier:
     )
 
 
-def _draw(text: str) -> tuple[str, object]:
+def _draw(text: str) -> tuple[str, Bushels]:
     if "=" not in text:
         raise ValidationError("a draw is written BIN=BUSHELS", got=text)
     identifier, _, amount = text.partition("=")
