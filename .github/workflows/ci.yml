@@ -1,0 +1,102 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  FORCE_COLOR: "1"
+
+jobs:
+  lint:
+    name: ruff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: install
+        run: pip install -e ".[api,dev]"
+      - name: check
+        run: ruff check src tests scripts
+      - name: format
+        run: ruff format --check src tests scripts
+
+  types:
+    name: mypy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: install
+        run: pip install -e ".[api,dev]"
+      - name: mypy
+        run: mypy
+
+  test:
+    name: pytest ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: install
+        run: pip install -e ".[api,dev]"
+      - name: pytest
+        run: pytest --cov=binyard --cov-report=xml --cov-report=term-missing
+      - name: upload coverage
+        if: matrix.python == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.xml
+          retention-days: 14
+
+  migrate:
+    name: migrate and seed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: install
+        run: pip install -e ".[api,dev]"
+      - name: migrate a fresh database
+        run: binyard --database sqlite:///ci.sqlite3 migrate
+      - name: migrating twice applies nothing
+        run: |
+          binyard --database sqlite:///ci.sqlite3 migrate
+          binyard --database sqlite:///ci.sqlite3 migrate --check
+      - name: seed a season
+        run: python scripts/seed_demo.py --database ci.sqlite3 --force --loads 60
+      - name: the position balances
+        run: binyard --database sqlite:///ci.sqlite3 --on 2025-10-30 report position
+      - name: the examiner statement renders
+        run: |
+          binyard --database sqlite:///ci.sqlite3 --on 2025-10-30 --format csv \
+            report examiner
