@@ -1,0 +1,55 @@
+name: security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - pyproject.toml
+      - .github/workflows/security.yml
+  schedule:
+    # Monday morning, before anybody is in.
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install
+        run: |
+          pip install -e ".[api,serve,dev]"
+          pip install pip-audit==2.7.3
+      - name: audit
+        run: pip-audit --strict --progress-spinner off
+
+  secrets:
+    name: nothing that looks like a key
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: grep the tree
+        run: |
+          set -e
+          # The package never reads a key from a literal, so anything matching
+          # here is either a test fixture with an obvious name or a mistake.
+          if grep -rInE '(api[_-]?key|secret|password|token)[[:space:]]*=[[:space:]]*"[A-Za-z0-9/+=_-]{16,}"' \
+             --include='*.py' --include='*.toml' --include='*.yml' \
+             src scripts pyproject.toml; then
+            echo "that looks like a credential in the tree"
+            exit 1
+          fi
+          echo "clean"
+
+      - name: the settings dump never carries the key
+        run: |
+          grep -q 'Everything except the key' src/binyard/config.py
+          ! grep -n '"api_key"' src/binyard/config.py

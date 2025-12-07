@@ -1,0 +1,76 @@
+name: docker
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - docker-compose.yml
+      - scripts/entrypoint.sh
+      - gunicorn.conf.py
+      - pyproject.toml
+      - src/**
+  workflow_dispatch:
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build and smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: runtime
+          load: true
+          tags: binyard:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: it runs as a user that is not root
+        run: |
+          whoami=$(docker run --rm --entrypoint id binyard:ci -un)
+          test "$whoami" = "binyard" || { echo "running as $whoami"; exit 1; }
+
+      - name: the cli answers
+        run: docker run --rm --entrypoint binyard binyard:ci --version
+
+      - name: it comes up and serves health
+        run: |
+          docker run -d --name binyard-ci -p 8000:8000 binyard:ci
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/health > /dev/null; then
+              echo "up after $attempt attempts"
+              break
+            fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8000/health | tee /dev/stderr | grep -q '"status": *"ok"'
+          curl -fsS http://127.0.0.1:8000/ready | grep -q '"pending_migrations": *\[\]'
+
+      - name: a bin can be registered and read back
+        run: |
+          curl -fsS -X POST http://127.0.0.1:8000/bins \
+            -H 'content-type: application/json' \
+            -d '{"identifier":"N1","name":"North 1","capacity":"120000"}' \
+            | grep -q '"identifier": *"N1"'
+          curl -fsS http://127.0.0.1:8000/bins | grep -q 'North 1'
+
+      - name: the container logs are json
+        if: always()
+        run: docker logs binyard-ci
+
+      - name: stop it
+        if: always()
+        run: docker rm -f binyard-ci || true
