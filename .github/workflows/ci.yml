@@ -32,6 +32,10 @@ jobs:
         run: ruff check src tests scripts
       - name: format
         run: ruff format --check src tests scripts
+      - name: no focused or assertion free tests
+        run: python scripts/check_tests.py tests
+      - name: nothing exact converted through a float
+        run: python scripts/check_no_floats.py
 
   types:
     name: mypy
