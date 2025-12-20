@@ -22,6 +22,7 @@ from binyard.identity import TicketNumber
 from binyard.inventory.yard import Yard
 from binyard.obligations.obligation import ObligationStatus, StorageObligation
 from binyard.settlement.statement import Settlement
+from binyard.store.drying import MemoryDryerStore
 from binyard.store.orders import MemoryOrderStore
 from binyard.tickets.ticket import ScaleTicket, TicketStatus
 
@@ -244,6 +245,7 @@ class MemoryUnitOfWork:
         self.contracts = MemoryContractStore()
         self.settlements = MemorySettlementStore()
         self.orders = MemoryOrderStore()
+        self.dryer = MemoryDryerStore()
         self.yard = MemoryYardStore(yard)
         self.committed = 0
         self._snapshot: dict[str, Any] = self._take()
@@ -255,6 +257,7 @@ class MemoryUnitOfWork:
             "contracts": self.contracts,
             "settlements": self.settlements,
             "orders": self.orders,
+            "dryer": self.dryer,
             "yard": self.yard,
         }
 
