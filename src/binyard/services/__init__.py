@@ -1,5 +1,6 @@
 """Use cases: the sequences that touch several aggregates at once."""
 
+from binyard.services.drying import DryingOutcome, abandon_run, finish_run, start_run
 from binyard.services.receiving import Receipt, ReceiptRequest, receive_load
 from binyard.services.reporting import (
     DaySheet,
@@ -18,17 +19,21 @@ from binyard.services.shipping import (
 
 __all__ = [
     "DaySheet",
+    "DryingOutcome",
     "Receipt",
     "ReceiptRequest",
     "SettlementRequest",
     "Shipment",
     "ShipmentRequest",
+    "abandon_run",
     "day_sheet",
     "examiner_report",
+    "finish_run",
     "plan_shipment",
     "position_on",
     "receive_load",
     "review_queue",
     "settle_tickets",
     "ship_next_load",
+    "start_run",
 ]
