@@ -50,6 +50,7 @@ from binyard.obligations.obligation import (
 from binyard.percent import Percent
 from binyard.settlement.statement import ChargeKind, Settlement, StatementLine
 from binyard.store.drying import SqliteDryerStore
+from binyard.store.feed import SqliteFeedLog
 from binyard.store.mappers import (
     as_date,
     as_datetime,
@@ -635,6 +636,7 @@ class SqliteUnitOfWork:
         self.settlements = SqliteSettlementStore(connection)
         self.orders = SqliteOrderStore(connection)
         self.dryer = SqliteDryerStore(connection)
+        self.feed = SqliteFeedLog(connection)
         self.yard = SqliteYardStore(connection)
 
     @classmethod

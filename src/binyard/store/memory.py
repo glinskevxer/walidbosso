@@ -23,6 +23,7 @@ from binyard.inventory.yard import Yard
 from binyard.obligations.obligation import ObligationStatus, StorageObligation
 from binyard.settlement.statement import Settlement
 from binyard.store.drying import MemoryDryerStore
+from binyard.store.feed import MemoryFeedLog
 from binyard.store.orders import MemoryOrderStore
 from binyard.tickets.ticket import ScaleTicket, TicketStatus
 
@@ -246,6 +247,7 @@ class MemoryUnitOfWork:
         self.settlements = MemorySettlementStore()
         self.orders = MemoryOrderStore()
         self.dryer = MemoryDryerStore()
+        self.feed = MemoryFeedLog()
         self.yard = MemoryYardStore(yard)
         self.committed = 0
         self._snapshot: dict[str, Any] = self._take()
@@ -258,6 +260,7 @@ class MemoryUnitOfWork:
             "settlements": self.settlements,
             "orders": self.orders,
             "dryer": self.dryer,
+            "feed": self.feed,
             "yard": self.yard,
         }
 

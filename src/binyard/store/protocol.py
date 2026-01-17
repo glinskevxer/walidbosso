@@ -31,12 +31,14 @@ from binyard.inventory.yard import Yard
 from binyard.obligations.obligation import StorageObligation
 from binyard.settlement.statement import Settlement
 from binyard.store.drying import DryerStore
+from binyard.store.feed import FeedLog
 from binyard.store.orders import OrderStore
 from binyard.tickets.ticket import ScaleTicket
 
 __all__ = [
     "ContractStore",
     "DryerStore",
+    "FeedLog",
     "ObligationStore",
     "OrderStore",
     "SettlementStore",
@@ -163,6 +165,9 @@ class UnitOfWork(Protocol):
 
     @property
     def dryer(self) -> DryerStore: ...
+
+    @property
+    def feed(self) -> FeedLog: ...
 
     @property
     def yard(self) -> YardStore: ...
