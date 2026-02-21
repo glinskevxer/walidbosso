@@ -121,6 +121,10 @@ class Reader:
                 "expected a date as YYYY-MM-DD", field=self._where(name), got=repr(value)
             ) from exc
 
+    def optional_day(self, name: str) -> date | None:
+        value = self._raw(name, None)
+        return None if value is None else self.day(name)
+
     def timestamp(self, name: str, default: Any = _MISSING) -> datetime:
         value = self._raw(name, default)
         if isinstance(value, datetime):

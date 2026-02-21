@@ -55,6 +55,7 @@ class TestParser:
             "migrate",
             "bins",
             "receive",
+            "feed",
             "blend",
             "ship",
             "report",

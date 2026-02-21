@@ -21,7 +21,7 @@ from starlette.routing import Route
 
 from binyard.api.app import work_for
 from binyard.api.parsing import reader_for
-from binyard.errors import ValidationError
+from binyard.errors import NotFound, ValidationError
 from binyard.obligations.storage import Accrual, StorageTerms, accrue
 
 __all__ = ["routes"]
@@ -106,11 +106,14 @@ async def price(request: Request) -> JSONResponse:
 async def cancel(request: Request) -> JSONResponse:
     identifier = request.path_params["identifier"]
     reader = reader_for(await request.json())
+    replacement = reader.optional_text("superseded_by")
     work = work_for(request)
     try:
-        cancelled = work.obligations.get(identifier).cancelled(
-            superseded_by=reader.optional_text("superseded_by")
-        )
+        if replacement is not None and not work.obligations.exists(replacement):
+            # The column is a foreign key, so naming an obligation that is not
+            # there would come back as a driver error with nothing useful on it.
+            raise NotFound("obligation", replacement)
+        cancelled = work.obligations.get(identifier).cancelled(superseded_by=replacement)
         work.obligations.replace(cancelled)
         work.commit()
         return JSONResponse(cancelled.describe())

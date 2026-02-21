@@ -90,7 +90,7 @@ async def create(request: Request) -> JSONResponse:
         basis=Price.of(basis) if basis is not None else None,
         futures_month=reader.optional_text("futures_month"),
         tolerance=tolerance,
-        written_on=reader.day("written_on", None),
+        written_on=reader.optional_day("written_on"),
     )
 
     work = work_for(request)
