@@ -58,6 +58,7 @@ class TestParser:
             "feed",
             "blend",
             "ship",
+            "settle",
             "report",
         }
 
