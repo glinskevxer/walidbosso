@@ -42,6 +42,10 @@ packages = ["src/binyard"]
 testpaths = ["tests"]
 pythonpath = ["src"]
 addopts = "-q --strict-markers"
+markers = [
+    "slow: takes more than a second, and is skipped by `make fast`",
+    "benchmark: measures how long something takes rather than what it returns",
+]
 
 [tool.ruff]
 line-length = 96
