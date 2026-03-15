@@ -359,6 +359,71 @@ class TestYard:
         assert described["headroom"] == "119000.00 bu"
 
 
+class TestTheFoldCache:
+    def test_a_backdated_receipt_still_folds_correctly(self):
+        yard = yard_with("N1")
+        yard = yard.receive(
+            "N1", "CORN", bushels("1000"), dry(), at=EVENING, reference="T2", by="s"
+        )
+        yard = yard.receive(
+            "N1", "CORN", bushels("1000"), wet(), at=MORNING, reference="T1", by="s"
+        )
+        assert yard.contents_of("N1").quantity == bushels("2000")
+        assert yard.contents_of("N1").quality.moisture == percent("17.0")
+
+    def test_a_backdated_movement_drops_the_cached_answer(self):
+        yard = yard_with("N1")
+        yard = yard.receive(
+            "N1", "CORN", bushels("1000"), dry(), at=EVENING, reference="T2", by="s"
+        )
+        assert "N1" in yard.known
+        later = yard.receive(
+            "N1", "CORN", bushels("500"), dry(), at=MORNING, reference="T1", by="s"
+        )
+        assert "N1" not in later.known
+        assert later.contents_of("N1").quantity == bushels("1500")
+
+    def test_a_movement_at_the_end_keeps_the_cache_warm(self):
+        yard = yard_with("N1")
+        yard = yard.receive(
+            "N1", "CORN", bushels("1000"), dry(), at=MORNING, reference="T1", by="s"
+        )
+        later = yard.receive(
+            "N1", "CORN", bushels("500"), dry(), at=EVENING, reference="T2", by="s"
+        )
+        assert later.known["N1"].quantity == bushels("1500")
+
+    def test_the_cache_is_not_part_of_identity(self):
+        one = yard_with("N1").receive(
+            "N1", "CORN", bushels("1000"), dry(), at=MORNING, reference="T1", by="s"
+        )
+        two = yard_with("N1").receive(
+            "N1", "CORN", bushels("1000"), dry(), at=MORNING, reference="T1", by="s"
+        )
+        one.contents_of("N1")
+        assert one == two
+
+    def test_reading_history_never_answers_from_the_cache(self):
+        yard = yard_with("N1")
+        yard = yard.receive(
+            "N1", "CORN", bushels("1000"), dry(), at=MORNING, reference="T1", by="s"
+        )
+        yard = yard.receive(
+            "N1", "CORN", bushels("1000"), dry(), at=EVENING, reference="T2", by="s"
+        )
+        assert yard.contents_of("N1").quantity == bushels("2000")
+        assert yard.contents_of("N1", when=NOON).quantity == bushels("1000")
+        assert yard.contents_of("N1").quantity == bushels("2000")
+
+    def test_adding_a_bin_keeps_what_was_already_worked_out(self):
+        yard = yard_with("N1").receive(
+            "N1", "CORN", bushels("1000"), dry(), at=MORNING, reference="T1", by="s"
+        )
+        yard.contents_of("N1")
+        wider = yard.with_bin(bin_for("N9"))
+        assert wider.known["N1"].quantity == bushels("1000")
+
+
 def test_a_full_harvest_day_reconciles():
     yard = yard_with("N1", "N2")
     at = MORNING

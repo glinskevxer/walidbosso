@@ -5,16 +5,27 @@ contents, and the ledger does not know a bin's capacity, so neither of them can
 tell you on its own whether the next load fits. The yard can, and every
 movement goes through it so that check happens exactly once.
 
-Contents are folded from the ledger every time they are asked for. That is
-linear in the number of movements for that bin, which for a season and a bin is
-a few thousand entries, and it takes microseconds. When it stops being cheap
-the fix is a cached fold keyed on the ledger length, not a stored total that
-can drift from the entries that produced it.
+Contents are folded from the ledger rather than stored, so they cannot drift
+from the entries that produced them. The fold is linear in the movements for
+that bin, which for one bin and one season is a few thousand entries.
+
+Taking a whole harvest in, though, is a fold per load over a growing ledger,
+and that is quadratic. A benchmark caught it at nine hundred loads. So a yard
+carries the contents it has already worked out, and posting a movement to the
+end of the ledger updates that one bin rather than re-folding it. The cache is
+per instance and a yard is immutable, so it cannot go stale: a new yard with a
+new ledger gets a new cache seeded with exactly the bin the movement touched.
+
+A **backdated** movement invalidates that bin instead of updating it, because
+the fold order changes and the answer is no longer the old answer plus one
+entry. That is the rare case and it pays the full fold, which is right.
+
+Reading history, ``when`` given, never touches the cache at all.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 
 from binyard.bushels import Bushels
@@ -71,6 +82,10 @@ class Yard:
 
     bins: tuple[Bin, ...] = ()
     ledger: Ledger = Ledger()
+    #: Contents already folded, by bin. Never part of identity or repr: two
+    #: yards with the same bins and ledger are the same yard whatever either
+    #: of them happens to have computed.
+    known: dict[str, BinContents] = field(default_factory=dict, compare=False, repr=False)
 
     def __post_init__(self) -> None:
         identifiers = [structure.identifier for structure in self.bins]
@@ -87,12 +102,16 @@ class Yard:
 
     def contents_of(self, identifier: str, *, when: datetime | None = None) -> BinContents:
         """Fold the ledger for one bin, optionally as it stood at a moment."""
-        self.bin(identifier)
+        structure = self.bin(identifier)
+        if when is None and identifier in self.known:
+            return self.known[identifier]
+
         ledger = self.ledger if when is None else self.ledger.up_to(when)
         contents = BinContents.empty()
-        structure = self.bin(identifier)
         for entry in ledger.for_bin(identifier):
             contents = _apply(structure, contents, entry)
+        if when is None:
+            self.known[identifier] = contents
         return contents
 
     def state_of(self, identifier: str, *, when: datetime | None = None) -> BinState:
@@ -117,7 +136,7 @@ class Yard:
         return total
 
     def with_bin(self, structure: Bin) -> Yard:
-        return replace(self, bins=(*self.bins, structure))
+        return replace(self, bins=(*self.bins, structure), known=dict(self.known))
 
     # -- writing ---------------------------------------------------------
 
@@ -125,8 +144,20 @@ class Yard:
         """Post one movement, refusing anything the bin cannot take."""
         structure = self.bin(movement.bin_identifier)
         contents = self.contents_of(movement.bin_identifier)
-        _apply(structure, contents, movement)
-        return replace(self, ledger=self.ledger.post(movement))
+        after = _apply(structure, contents, movement)
+
+        carried = dict(self.known)
+        if self._is_at_the_end(movement):
+            carried[movement.bin_identifier] = after
+        else:
+            carried.pop(movement.bin_identifier, None)
+        return Yard(bins=self.bins, ledger=self.ledger.post(movement), known=carried)
+
+    def _is_at_the_end(self, movement: Movement) -> bool:
+        """Whether this movement lands after everything already in the ledger."""
+        if not self.ledger.entries:
+            return True
+        return movement.at >= self.ledger.entries[-1].at
 
     def receive(
         self,
