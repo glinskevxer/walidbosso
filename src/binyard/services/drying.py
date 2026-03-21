@@ -74,6 +74,7 @@ def start_run(
         wet_bushels=quantity,
         wet_moisture=contents.quality.moisture,
         started_at=at,
+        wet_quality=contents.quality,
     ).lit(at)
 
     yard = yard.ship(source_bin, quantity, at=at, reference=identifier, by=by)
@@ -182,17 +183,17 @@ def _dry_quality(work: UnitOfWork, run: DryerRun, dry_moisture: Percent) -> Fact
     Drying moves moisture and leaves everything else where it was. It does add
     a little breakage, but the amount is not measurable per run and guessing at
     it would put a made up number into a bin's average.
+
+    The quality comes off the run. Looking it up in the source bin instead only
+    worked while the run left something behind, and a run that empties its bin
+    is the ordinary case.
     """
-    yard = work.yard.load()
-    contents = yard.contents_of(run.source_bin)
+    if run.wet_quality is not None:
+        return _with_moisture(run.wet_quality, dry_moisture)
+    contents = work.yard.load().contents_of(run.source_bin)
     if contents.quality is not None:
         return _with_moisture(contents.quality, dry_moisture)
-    for entry in yard.ledger.for_reference(run.identifier):
-        if entry.quality is not None:
-            return _with_moisture(entry.quality, dry_moisture)
-    raise ValidationError(
-        "nothing left in the yard says what that run was drying", run=run.identifier
-    )
+    raise ValidationError("that run does not say what it was drying", run=run.identifier)
 
 
 def _with_moisture(sample: FactorSample, moisture: Percent) -> FactorSample:

@@ -16,7 +16,7 @@ from binyard.drying.run import DryerRun, FuelUse, RunStatus
 from binyard.errors import Conflict, NotFound
 from binyard.money import Price
 from binyard.percent import Percent
-from binyard.store.mappers import as_datetime
+from binyard.store.mappers import as_datetime, sample_from_json, sample_to_json
 
 __all__ = ["DryerStore", "MemoryDryerStore", "SqliteDryerStore"]
 
@@ -100,6 +100,7 @@ class SqliteDryerStore(DryerStore):
             None if run.fuel is None else int(run.fuel.gallons * THOUSANDTHS),
             None if run.fuel is None else run.fuel.price_per_gallon.ticks,
             run.note,
+            sample_to_json(run.wet_quality),
             run.identifier,
         )
         if insert:
@@ -107,7 +108,8 @@ class SqliteDryerStore(DryerStore):
                 "INSERT INTO dryer_runs (commodity_code, source_bin, destination_bin,"
                 " wet_hundredths, wet_moisture, started_at, status, dry_hundredths,"
                 " dry_moisture, finished_at, fuel_thousandths, fuel_price_ticks, note,"
-                " identifier) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " wet_quality_json, identifier)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 values,
             )
         else:
@@ -115,8 +117,8 @@ class SqliteDryerStore(DryerStore):
                 "UPDATE dryer_runs SET commodity_code = ?, source_bin = ?,"
                 " destination_bin = ?, wet_hundredths = ?, wet_moisture = ?,"
                 " started_at = ?, status = ?, dry_hundredths = ?, dry_moisture = ?,"
-                " finished_at = ?, fuel_thousandths = ?, fuel_price_ticks = ?, note = ?"
-                " WHERE identifier = ?",
+                " finished_at = ?, fuel_thousandths = ?, fuel_price_ticks = ?, note = ?,"
+                " wet_quality_json = ? WHERE identifier = ?",
                 values,
             )
 
@@ -149,6 +151,7 @@ class SqliteDryerStore(DryerStore):
             finished_at=as_datetime(mapping["finished_at"]),
             fuel=fuel,
             note=mapping["note"],
+            wet_quality=sample_from_json(mapping["wet_quality_json"]),
         )
 
 

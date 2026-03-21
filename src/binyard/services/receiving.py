@@ -20,6 +20,13 @@ Grading before binning matters. A load that would be rejected on moisture has
 to be turned away at the pit, and a house that bins first and grades later
 finds out it has put 26% corn on top of a bin of 14% and has no way to get it
 back out.
+
+**Every bushel gets an obligation, including the house's own.** Grain applied
+to a contract belongs to the house, and it needs a company owned obligation
+saying so. Opening one only for the storage remainder leaves those bushels in
+no book at all: the position report cannot see them, and a load-out cannot draw
+them because there is nothing to release. That was the state of this service
+until a season length test found it.
 """
 
 from __future__ import annotations
@@ -71,6 +78,8 @@ class Receipt:
     assessment: Assessment
     application: ApplicationPlan
     obligation: StorageObligation | None
+    #: The company owned obligation opened for whatever went onto a contract.
+    company_owned: StorageObligation | None
     contracts_filled: tuple[str, ...]
 
     @property
@@ -85,6 +94,9 @@ class Receipt:
             "discounts": self.assessment.describe(),
             "application": self.application.describe(),
             "obligation": None if self.obligation is None else self.obligation.describe(),
+            "company_owned": (
+                None if self.company_owned is None else self.company_owned.describe()
+            ),
             "contracts_filled": list(self.contracts_filled),
         }
 
@@ -177,6 +189,18 @@ def receive_load(
         work.contracts.replace(moved)
         filled.append(moved.identifier)
 
+    owned: StorageObligation | None = None
+    if plan.to_contracts.is_positive():
+        owned = StorageObligation(
+            identifier=f"CO-{number}",
+            account=request.account,
+            commodity_code=standard.code,
+            kind=ObligationKind.COMPANY_OWNED,
+            quantity=plan.to_contracts,
+            opened_on=request.weighed_on,
+        )
+        work.obligations.add(owned)
+
     obligation: StorageObligation | None = None
     if plan.to_storage.is_positive():
         obligation = _store_the_rest(work, request, standard, plan.to_storage, number)
@@ -191,6 +215,7 @@ def receive_load(
         assessment=assessment,
         application=plan,
         obligation=obligation,
+        company_owned=owned,
         contracts_filled=tuple(filled),
     )
 

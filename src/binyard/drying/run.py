@@ -14,6 +14,10 @@ disagreement with a grower into an arithmetic question.
 Fuel is here too, for the same reason. Propane per point per bushel is what
 decides whether it is cheaper to dry a load or discount it, and a house that
 does not measure it is guessing at its own drying charge.
+
+The run also carries the quality of what went in. It has to: a run usually
+empties the bin it drew from, so going back to that bin afterwards to ask what
+was in it finds an empty bin and nothing to say.
 """
 
 from __future__ import annotations
@@ -25,6 +29,7 @@ from enum import StrEnum
 
 from binyard.bushels import Bushels
 from binyard.errors import ValidationError
+from binyard.grading.factors import FactorSample
 from binyard.money import Money, Price
 from binyard.percent import Percent
 from binyard.shrink import ShrinkPolicy, apply_shrink
@@ -112,6 +117,8 @@ class DryerRun:
     status: RunStatus = RunStatus.LOADED
     dry_moisture: Percent | None = None
     dry_bushels: Bushels | None = None
+    #: What the source bin held when the run drew from it.
+    wet_quality: FactorSample | None = None
     finished_at: datetime | None = None
     fuel: FuelUse | None = None
     note: str = ""
@@ -233,6 +240,7 @@ class DryerRun:
             "status": self.status.value,
             "wet_bushels": str(self.wet_bushels),
             "wet_moisture": str(self.wet_moisture),
+            "wet_quality": None if self.wet_quality is None else self.wet_quality.describe(),
             "dry_bushels": None if self.dry_bushels is None else str(self.dry_bushels),
             "dry_moisture": None if self.dry_moisture is None else str(self.dry_moisture),
             "points_removed": str(self.points_removed),
