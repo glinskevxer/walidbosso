@@ -51,6 +51,8 @@ def create_app(
     from binyard.api.routes import (
         blend,
         contracts,
+        dryer,
+        feed,
         health,
         obligations,
         reports,
@@ -59,7 +61,17 @@ def create_app(
     )
 
     routes: list[Route] = []
-    for module in (health, tickets, yard, blend, obligations, contracts, reports):
+    for module in (
+        health,
+        tickets,
+        yard,
+        blend,
+        obligations,
+        contracts,
+        dryer,
+        feed,
+        reports,
+    ):
         routes.extend(module.routes())
 
     middleware = [
