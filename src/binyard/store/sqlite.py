@@ -100,7 +100,8 @@ class SqliteTicketStore(_Store):
     _COLUMNS = (
         "number, kind, commodity_code, account, weighed_on, gross_hundredths,"
         " tare_hundredths, tare_source, gross_at, tare_at, status, hauler,"
-        " sample_json, grade_json, shrink_json, voids, void_reason, history_json"
+        " sample_json, grade_json, shrink_json, voids, void_reason, history_json,"
+        " review_notes"
     )
 
     def add(self, ticket: ScaleTicket) -> None:
@@ -178,6 +179,7 @@ class SqliteTicketStore(_Store):
             "voids": None if ticket.voids is None else str(ticket.voids),
             "void_reason": ticket.void_reason,
             "history_json": history_to_json(ticket.history),
+            "review_notes": "\n".join(ticket.review_notes),
         }
 
     @staticmethod
@@ -198,6 +200,9 @@ class SqliteTicketStore(_Store):
             voids=None if mapping["voids"] is None else TicketNumber.parse(mapping["voids"]),
             void_reason=mapping["void_reason"],
             history=history_from_json(mapping["history_json"]),
+            review_notes=tuple(
+                note for note in (mapping["review_notes"] or "").split("\n") if note
+            ),
         )
 
 

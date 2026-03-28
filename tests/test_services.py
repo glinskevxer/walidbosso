@@ -192,6 +192,85 @@ class TestReceiving:
         assert described["application"]["to_storage"] != "0.00 bu"
 
 
+class TestProbedLoads:
+    def _probes(self, moistures, position_cycle=None, grams=400):
+        from binyard.grading import Position, Probe
+
+        places = position_cycle or [Position.FRONT, Position.MIDDLE, Position.REAR]
+        return tuple(
+            Probe(
+                position=places[index % len(places)],
+                grams=grams,
+                reading=sample_for(commodity.CORN, moisture=percent(moisture)),
+            )
+            for index, moisture in enumerate(moistures)
+        )
+
+    def test_a_properly_probed_load_needs_no_review(self, work, numbers):
+        receipt = receive_load(
+            work,
+            numbers,
+            request_for(sample=None, probes=self._probes(["15.0", "15.2", "15.1"])),
+            book=BOOK,
+        )
+        assert not receipt.ticket.needs_review
+        assert receipt.ticket.review_notes == ()
+        assert receipt.ticket.sample.moisture == percent("15.1")
+
+    def test_one_probe_flags_the_ticket(self, work, numbers):
+        receipt = receive_load(
+            work,
+            numbers,
+            request_for(sample=None, probes=self._probes(["15.0"])),
+            book=BOOK,
+        )
+        assert receipt.ticket.needs_review
+        assert any("minimum" in note for note in receipt.ticket.review_notes)
+
+    def test_a_load_wet_at_one_end_is_flagged_but_still_taken(self, work, numbers):
+        receipt = receive_load(
+            work,
+            numbers,
+            request_for(sample=None, probes=self._probes(["13.5", "15.5", "19.0"])),
+            book=BOOK,
+        )
+        assert receipt.ticket.status is TicketStatus.APPLIED
+        assert receipt.ticket.needs_review
+        assert any("varied" in note for note in receipt.ticket.review_notes)
+
+    def test_a_flagged_ticket_reaches_the_review_queue(self, work, numbers):
+        receive_load(
+            work,
+            numbers,
+            request_for(sample=None, probes=self._probes(["15.0"])),
+            book=BOOK,
+        )
+        queue = review_queue(work)
+        assert len(queue.rows) == 1
+        assert "minimum" in queue.rows[0]["reason"]
+
+    def test_a_load_with_neither_a_sample_nor_probes_is_refused(self):
+        with pytest.raises(ValidationError):
+            request_for(sample=None)
+
+    def test_a_load_with_both_is_refused(self):
+        with pytest.raises(ValidationError):
+            request_for(probes=self._probes(["15.0"]))
+
+    def test_a_load_with_nowhere_to_go_is_refused(self):
+        with pytest.raises(ValidationError):
+            request_for(bin_identifier="")
+
+    def test_the_probed_moisture_still_decides_the_ceiling(self, work, numbers):
+        with pytest.raises(TicketError):
+            receive_load(
+                work,
+                numbers,
+                request_for(sample=None, probes=self._probes(["26.0", "26.5", "27.0"])),
+                book=BOOK,
+            )
+
+
 class TestShipping:
     def _stock(self, work, numbers, loads=6):
         for _ in range(loads):

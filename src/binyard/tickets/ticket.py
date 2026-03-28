@@ -99,6 +99,8 @@ class ScaleTicket:
     shrink: ShrinkResult | None = None
     voids: TicketNumber | None = None
     void_reason: str | None = None
+    #: Anything about this ticket somebody has to look at, beyond the weights.
+    review_notes: tuple[str, ...] = ()
     history: tuple[TicketEvent, ...] = field(default=())
 
     def __post_init__(self) -> None:
@@ -131,7 +133,18 @@ class ScaleTicket:
 
     @property
     def needs_review(self) -> bool:
-        return self.weights.needs_review
+        return self.weights.needs_review or bool(self.review_notes)
+
+    def review_reasons(self) -> tuple[str, ...]:
+        """Every reason this ticket wants a second pair of eyes."""
+        return (*self.weights.review_reasons(), *self.review_notes)
+
+    def flagged(self, *notes: str) -> ScaleTicket:
+        """Attach review notes without moving the ticket's state."""
+        kept = tuple(note.strip() for note in notes if note.strip())
+        if not kept:
+            return self
+        return replace(self, review_notes=(*self.review_notes, *kept))
 
     def can_become(self, status: TicketStatus) -> bool:
         return status in _ALLOWED[self.status]
@@ -252,5 +265,6 @@ class ScaleTicket:
             "voids": None if self.voids is None else str(self.voids),
             "void_reason": self.void_reason,
             "needs_review": self.needs_review,
+            "review_reasons": list(self.review_reasons()),
             "history": [event.describe() for event in self.history],
         }

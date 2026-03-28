@@ -123,7 +123,7 @@ def review_queue(work: UnitOfWork) -> Table:
                 "account": ticket.account,
                 "commodity": ticket.commodity_code,
                 "status": ticket.status.value,
-                "reason": "; ".join(ticket.weights.review_reasons()),
+                "reason": "; ".join(ticket.review_reasons()),
             }
         )
     return Table(title="Tickets needing review", columns=columns, rows=tuple(rows))

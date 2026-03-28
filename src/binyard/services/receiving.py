@@ -41,7 +41,8 @@ from binyard.contracts.contract import Delivery
 from binyard.discounts.apply import Assessment, assess
 from binyard.discounts.schedule import ScheduleBook
 from binyard.errors import TicketError, ValidationError
-from binyard.grading.factors import FactorSample
+from binyard.grading.factors import FactorName, FactorSample
+from binyard.grading.sampling import Probe, build_composite
 from binyard.identity import Sequence, TicketNumber
 from binyard.obligations.obligation import ObligationKind, StorageObligation
 from binyard.shrink import ShrinkPolicy
@@ -54,20 +55,46 @@ __all__ = ["Receipt", "ReceiptRequest", "receive_load"]
 
 @dataclass(frozen=True, slots=True)
 class ReceiptRequest:
-    """Everything the scale house knows when the truck pulls off."""
+    """Everything the scale house knows when the truck pulls off.
+
+    Either a ``sample`` or a list of ``probes``. Probes are the honest version
+    and they carry an opinion about whether the load was really sampled, which
+    lands on the ticket as a review note rather than being thrown away.
+    """
 
     account: str
     standard: CropStandard
     weights: ScaleWeights
-    sample: FactorSample
-    bin_identifier: str
-    weighed_on: date
-    at: datetime
-    by: str
+    sample: FactorSample | None = None
+    bin_identifier: str = ""
+    weighed_on: date = date.min
+    at: datetime = datetime.min
+    by: str = ""
+    probes: tuple[Probe, ...] = ()
     hauler: str | None = None
     priority: Priority = Priority.EARLIEST_DEADLINE
     storage_kind: ObligationKind = ObligationKind.OPEN_STORAGE
     obligation_identifier: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.sample is None and not self.probes:
+            raise ValidationError("a load needs a sample or a set of probes")
+        if self.sample is not None and self.probes:
+            raise ValidationError("give a sample or probes, not both")
+        if not self.bin_identifier:
+            raise ValidationError("a load needs somewhere to go")
+
+    def composite(self) -> tuple[FactorSample, tuple[str, ...]]:
+        """The sample to grade on, and anything worth flagging about it."""
+        if self.sample is not None:
+            return self.sample, ()
+        found = build_composite(list(self.probes))
+        notes = list(found.reasons)
+        if found.needs_a_look:
+            notes.append(
+                f"moisture varied {found.spread(FactorName.MOISTURE)} points across the load"
+            )
+        return found.sample, tuple(notes)
 
 
 @dataclass(frozen=True, slots=True)
@@ -112,11 +139,12 @@ def receive_load(
     """Run one load all the way from the scale to the bin, or none of the way."""
     standard = request.standard
     shrink_policy = policy or ShrinkPolicy.market_default(standard)
+    sample, review_notes = request.composite()
 
-    if request.sample.moisture > standard.receiving_moisture_ceiling:
+    if sample.moisture > standard.receiving_moisture_ceiling:
         raise TicketError(
             "that load is too wet to take without drying",
-            moisture=str(request.sample.moisture),
+            moisture=str(sample.moisture),
             ceiling=str(standard.receiving_moisture_ceiling),
         )
 
@@ -129,10 +157,9 @@ def receive_load(
         weighed_on=request.weighed_on,
         weights=request.weights,
         hauler=request.hauler,
+        review_notes=review_notes,
     )
-    ticket = ticket.graded_as(
-        request.sample, standard, shrink_policy, at=request.at, by=request.by
-    )
+    ticket = ticket.graded_as(sample, standard, shrink_policy, at=request.at, by=request.by)
 
     schedule = book.in_effect(standard.code, request.weighed_on)
     assert ticket.grade is not None
