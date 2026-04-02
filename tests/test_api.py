@@ -168,6 +168,78 @@ class TestReceiving:
         assert response.json()["request_id"] == response.headers["x-request-id"]
 
 
+class TestProbedLoads:
+    def _probe(self, position, moisture, grams=400):
+        return {
+            "position": position,
+            "grams": grams,
+            "reading": {"moisture": moisture, "test_weight": "57.0"},
+        }
+
+    def test_a_probed_load_is_taken_and_composited(self, client):
+        body = load()
+        del body["sample"]
+        body["probes"] = [
+            self._probe("front", "15.0"),
+            self._probe("middle", "15.2"),
+            self._probe("rear", "15.1"),
+        ]
+        response = client.post("/tickets", json=body)
+        assert response.status_code == 201
+        ticket = response.json()["ticket"]
+        assert ticket["needs_review"] is False
+        assert ticket["grade"]["label"] == "US No. 1"
+
+    def test_one_probe_flags_the_ticket_for_review(self, client):
+        body = load()
+        del body["sample"]
+        body["probes"] = [self._probe("middle", "15.0")]
+        payload = client.post("/tickets", json=body).json()["ticket"]
+        assert payload["needs_review"] is True
+        assert any("minimum" in reason for reason in payload["review_reasons"])
+
+    def test_a_load_wet_at_one_end_says_so(self, client):
+        body = load()
+        del body["sample"]
+        body["probes"] = [
+            self._probe("front", "13.5"),
+            self._probe("middle", "15.5"),
+            self._probe("rear", "19.0"),
+        ]
+        payload = client.post("/tickets", json=body).json()["ticket"]
+        assert any("varied" in reason for reason in payload["review_reasons"])
+
+    def test_a_load_with_neither_is_refused(self, client):
+        body = load()
+        del body["sample"]
+        response = client.post("/tickets", json=body)
+        assert response.status_code == 400
+        assert response.json()["detail"]["field"] == "probes"
+
+    def test_a_probe_with_no_position(self, client):
+        body = load()
+        del body["sample"]
+        body["probes"] = [{"grams": 400, "reading": {"moisture": "15.0", "test_weight": "57"}}]
+        response = client.post("/tickets", json=body)
+        assert response.status_code == 400
+        assert "position" in response.json()["detail"]["field"]
+
+    def test_a_probe_position_that_is_not_one(self, client):
+        body = load()
+        del body["sample"]
+        body["probes"] = [self._probe("roof", "15.0")]
+        response = client.post("/tickets", json=body)
+        assert response.status_code == 400
+        assert "front" in response.json()["detail"]["allowed"]
+
+    def test_a_flagged_probed_load_reaches_the_review_queue(self, client):
+        body = load()
+        del body["sample"]
+        body["probes"] = [self._probe("middle", "15.0")]
+        client.post("/tickets", json=body)
+        assert client.get("/reports/review").json()["rows"]
+
+
 class TestTicketReads:
     def test_a_ticket_can_be_fetched_by_number(self, client):
         client.post("/tickets", json=load())

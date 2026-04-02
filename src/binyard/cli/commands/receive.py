@@ -20,7 +20,9 @@ from binyard import commodity
 from binyard.cli.context import Context
 from binyard.contracts.application import Priority
 from binyard.discounts.posted import default_book
+from binyard.errors import ValidationError
 from binyard.grading.factors import FactorSample, Odor
+from binyard.grading.sampling import Position, Probe
 from binyard.identity import Sequence, crop_year_of
 from binyard.percent import percent
 from binyard.reporting.reports import discount_table
@@ -44,8 +46,16 @@ def register(subparsers: argparse._SubParsersAction) -> None:
         choices=[item.value for item in TareSource],
         default=TareSource.WEIGHED.value,
     )
-    parser.add_argument("--moisture", required=True, help="percent")
-    parser.add_argument("--test-weight", required=True, help="pounds per bushel")
+    parser.add_argument("--moisture", help="percent, when the load is one reading")
+    parser.add_argument("--test-weight", help="pounds per bushel")
+    parser.add_argument(
+        "--probe",
+        dest="probes",
+        action="append",
+        default=[],
+        metavar="POSITION:GRAMS:MOISTURE:TEST_WEIGHT",
+        help="one probe draw, repeatable, instead of --moisture and --test-weight",
+    )
     parser.add_argument("--damage", default="0", help="total damage, percent")
     parser.add_argument("--heat", default="0", help="heat damage, percent")
     parser.add_argument("--foreign", default="0", help="foreign material, percent")
@@ -77,19 +87,28 @@ def handle(context: Context, arguments: argparse.Namespace) -> int:
         tare=parse_weight(arguments.tare),
         tare_source=TareSource(arguments.tare_source),
     )
-    sample = FactorSample(
-        moisture=percent(arguments.moisture),
-        test_weight=Decimal(arguments.test_weight),
-        total_damage=percent(arguments.damage),
-        heat_damage=percent(arguments.heat),
-        foreign_material=percent(arguments.foreign),
-        broken=percent(arguments.broken),
-        dockage=percent(arguments.dockage),
-        shrunken_broken=percent(arguments.shrunken),
-        other_classes=percent(arguments.other_classes),
-        odor=Odor(arguments.odor),
-        infested=arguments.infested,
-    )
+    if arguments.probes and (arguments.moisture or arguments.test_weight):
+        raise ValidationError("give probes or a single reading, not both")
+    if not arguments.probes and not (arguments.moisture and arguments.test_weight):
+        raise ValidationError("a load needs a moisture and a test weight, or probes")
+
+    def factors(moisture: str, test_weight: str) -> FactorSample:
+        return FactorSample(
+            moisture=percent(moisture),
+            test_weight=Decimal(test_weight),
+            total_damage=percent(arguments.damage),
+            heat_damage=percent(arguments.heat),
+            foreign_material=percent(arguments.foreign),
+            broken=percent(arguments.broken),
+            dockage=percent(arguments.dockage),
+            shrunken_broken=percent(arguments.shrunken),
+            other_classes=percent(arguments.other_classes),
+            odor=Odor(arguments.odor),
+            infested=arguments.infested,
+        )
+
+    probes = tuple(_probe(text, factors) for text in arguments.probes)
+    sample = None if probes else factors(arguments.moisture, arguments.test_weight)
     work = context.work()
     sequence = Sequence(context.settings.location, crop_year_of(context.on))
     receipt = receive_load(
@@ -100,6 +119,7 @@ def handle(context: Context, arguments: argparse.Namespace) -> int:
             standard=standard,
             weights=weights,
             sample=sample,
+            probes=probes,
             bin_identifier=arguments.bin_identifier,
             weighed_on=context.on,
             at=datetime.combine(context.on, datetime.now().time()),
@@ -122,6 +142,27 @@ def handle(context: Context, arguments: argparse.Namespace) -> int:
     return 0
 
 
+def _probe(text: str, factors) -> Probe:
+    """``front:420:15.4:57.0``, which is what the probe log sheet holds."""
+    parts = text.split(":")
+    if len(parts) != 4:
+        raise ValidationError(
+            "a probe is written POSITION:GRAMS:MOISTURE:TEST_WEIGHT", got=text
+        )
+    place, grams, moisture, test_weight = (item.strip() for item in parts)
+    try:
+        position = Position(place.lower())
+    except ValueError as exc:
+        raise ValidationError(
+            "no such probe position",
+            got=place,
+            known=[item.value for item in Position],
+        ) from exc
+    if not grams.isdigit():
+        raise ValidationError("a probe weight is whole grams", got=grams)
+    return Probe(position=position, grams=int(grams), reading=factors(moisture, test_weight))
+
+
 def _ticket_table(receipt) -> Table:
     ticket = receipt.ticket
     assert ticket.grade is not None and ticket.shrink is not None
@@ -138,6 +179,8 @@ def _ticket_table(receipt) -> Table:
     ]
     for item in ticket.grade.limiting:
         rows.append({"field": "held back by", "value": item.describe()})
+    for note in ticket.review_notes:
+        rows.append({"field": "look at", "value": note})
     return Table(
         title=f"Ticket {ticket.number}",
         columns=(Column("field", "Field"), Column("value", "Value")),

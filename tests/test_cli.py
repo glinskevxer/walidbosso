@@ -270,6 +270,136 @@ class TestReceive:
         assert "unknown_commodity" in err
 
 
+class TestProbes:
+    def test_a_probed_load_is_taken(self, database):
+        invoke(database, "bins", "add", "N1", "--name", "North 1", "--capacity", "120000")
+        code, out, _ = invoke(
+            database,
+            "--on",
+            "2025-10-14",
+            "receive",
+            "HALVORSEN FARMS",
+            "--crop",
+            "corn",
+            "--bin",
+            "N1",
+            "--gross",
+            "78420",
+            "--tare",
+            "30180",
+            "--probe",
+            "front:420:15.0:57.0",
+            "--probe",
+            "middle:410:15.2:56.5",
+            "--probe",
+            "rear:400:15.1:57.0",
+        )
+        assert code == 0
+        assert "WBS-25-000001" in out
+
+    def test_probes_and_a_single_reading_together_are_refused(self, database):
+        invoke(database, "bins", "add", "N1", "--name", "North 1", "--capacity", "120000")
+        code, _, err = invoke(
+            database,
+            "receive",
+            "HALVORSEN FARMS",
+            "--crop",
+            "corn",
+            "--bin",
+            "N1",
+            "--gross",
+            "78420",
+            "--tare",
+            "30180",
+            "--moisture",
+            "15.0",
+            "--test-weight",
+            "57",
+            "--probe",
+            "front:420:15.0:57.0",
+        )
+        assert code == 2
+        assert "not both" in err
+
+    def test_neither_is_refused(self, database):
+        invoke(database, "bins", "add", "N1", "--name", "North 1", "--capacity", "120000")
+        code, _, err = invoke(
+            database,
+            "receive",
+            "HALVORSEN FARMS",
+            "--crop",
+            "corn",
+            "--bin",
+            "N1",
+            "--gross",
+            "78420",
+            "--tare",
+            "30180",
+        )
+        assert code == 2
+        assert "or probes" in err
+
+    def test_a_malformed_probe_is_refused(self, database):
+        invoke(database, "bins", "add", "N1", "--name", "North 1", "--capacity", "120000")
+        code, _, err = invoke(
+            database,
+            "receive",
+            "HALVORSEN FARMS",
+            "--crop",
+            "corn",
+            "--bin",
+            "N1",
+            "--gross",
+            "78420",
+            "--tare",
+            "30180",
+            "--probe",
+            "front:420",
+        )
+        assert code == 2
+        assert "POSITION:GRAMS" in err
+
+    def test_a_probe_position_that_is_not_one(self, database):
+        invoke(database, "bins", "add", "N1", "--name", "North 1", "--capacity", "120000")
+        code, _, err = invoke(
+            database,
+            "receive",
+            "HALVORSEN FARMS",
+            "--crop",
+            "corn",
+            "--bin",
+            "N1",
+            "--gross",
+            "78420",
+            "--tare",
+            "30180",
+            "--probe",
+            "roof:420:15.0:57.0",
+        )
+        assert code == 2
+        assert "no such probe position" in err
+
+    def test_a_flagged_probed_load_warns_on_stderr(self, database):
+        invoke(database, "bins", "add", "N1", "--name", "North 1", "--capacity", "120000")
+        code, _, err = invoke(
+            database,
+            "receive",
+            "HALVORSEN FARMS",
+            "--crop",
+            "corn",
+            "--bin",
+            "N1",
+            "--gross",
+            "78420",
+            "--tare",
+            "30180",
+            "--probe",
+            "middle:420:15.0:57.0",
+        )
+        assert code == 0
+        assert "needs review" in err
+
+
 class TestBlend:
     def test_a_feasible_spec_prints_a_draw_list(self, database):
         stocked(database)

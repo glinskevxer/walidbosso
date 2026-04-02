@@ -5,6 +5,12 @@ bins and applies, in one transaction, and answers with the ticket, the
 discounts and where the bushels went. It is the endpoint the scale house
 terminal calls and the only write path in the API that touches five aggregates.
 
+A load arrives with either a ``sample``, which is one set of readings, or a
+list of ``probes``, which is what the probe actually pulled and where from.
+Probes are the better answer: the composite is weighted by what each one
+pulled, and anything the sampling rules do not like lands on the ticket as a
+review note instead of being lost.
+
 Reads are deliberately thin. Nothing here computes anything the domain has not
 already computed, so a listing is a projection of stored tickets and never a
 second opinion about what a load graded.
@@ -24,13 +30,14 @@ from binyard.contracts.application import Priority
 from binyard.discounts.posted import default_book
 from binyard.errors import ValidationError
 from binyard.grading.factors import FactorSample, Odor
+from binyard.grading.sampling import Position, Probe
 from binyard.identity import Sequence, TicketNumber, crop_year_of
 from binyard.obligations.obligation import ObligationKind
 from binyard.observability import metrics
 from binyard.services.receiving import ReceiptRequest, receive_load
 from binyard.tickets.weights import ScaleWeights, TareSource
 
-__all__ = ["routes", "sample_from", "weights_from"]
+__all__ = ["probes_from", "routes", "sample_from", "weights_from"]
 
 
 def routes() -> list[Route]:
@@ -65,6 +72,17 @@ def sample_from(reader: Reader) -> FactorSample:
     )
 
 
+def probes_from(reader: Reader) -> tuple[Probe, ...]:
+    return tuple(
+        Probe(
+            position=item.choice("position", Position),
+            grams=item.integer("grams"),
+            reading=sample_from(item.nested("reading")),
+        )
+        for item in reader.each("probes")
+    )
+
+
 async def create(request: Request) -> JSONResponse:
     reader = reader_for(await request.json())
     standard = reader.commodity("commodity")
@@ -75,11 +93,13 @@ async def create(request: Request) -> JSONResponse:
     at = reader.timestamp("at", datetime.combine(weighed_on, datetime.now().time()).isoformat())
     settings = request.app.state.settings
 
+    probed = reader.optional_nested("sample") is None
     receipt_request = ReceiptRequest(
         account=reader.text("account"),
         standard=standard,
         weights=weights_from(reader.nested("weights")),
-        sample=sample_from(reader.nested("sample")),
+        sample=None if probed else sample_from(reader.nested("sample")),
+        probes=probes_from(reader) if probed else (),
         bin_identifier=reader.text("bin"),
         weighed_on=weighed_on,
         at=at,
