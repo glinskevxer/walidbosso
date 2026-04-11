@@ -78,6 +78,27 @@ jobs:
           path: coverage.xml
           retention-days: 14
 
+  release:
+    name: releasable
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: install
+        run: pip install -e ".[api,dev]"
+      - name: check the tree is releasable
+        run: python scripts/check_release.py
+      - name: the wheel builds and the console script runs from it
+        run: |
+          pip install build==1.2.2.post1
+          python -m build --wheel
+          pip install --force-reinstall dist/binyard-*.whl
+          binyard --version
+
   migrate:
     name: migrate and seed
     runs-on: ubuntu-latest

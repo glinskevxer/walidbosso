@@ -30,8 +30,7 @@ from decimal import Decimal
 from enum import StrEnum
 
 from binyard.errors import ValidationError
-from binyard.grading.factors import FactorName, FactorSample, Odor
-from binyard.inventory.bin import commingle_many
+from binyard.grading.factors import FactorName, FactorSample, Odor, weighted_sample
 from binyard.percent import Percent
 
 __all__ = [
@@ -131,7 +130,7 @@ def build_composite(probes: list[Probe]) -> Composite:
     if not probes:
         raise ValidationError("a composite needs at least one probe")
 
-    sample = commingle_many([(probe.reading, probe.grams) for probe in probes])
+    sample = weighted_sample([(probe.reading, probe.grams) for probe in probes])
     reasons: list[str] = []
 
     if len(probes) < MINIMUM_PROBES:

@@ -47,8 +47,7 @@ from binyard.blend.simplex import Constraint, LinearProgram, Sense, Status, solv
 from binyard.blend.spec import BlendSource, BlendSpec, SpecLimit
 from binyard.bushels import Bushels
 from binyard.errors import InfeasibleBlend, ValidationError
-from binyard.grading.factors import FactorSample
-from binyard.inventory.bin import commingle_many
+from binyard.grading.factors import FactorSample, weighted_sample
 
 __all__ = ["BlendPlan", "Draw", "Objective", "plan_blend"]
 
@@ -277,6 +276,6 @@ def _to_draws(
 
 def _blended_quality(sources: list[BlendSource], draws: tuple[Draw, ...]) -> FactorSample:
     by_identifier = {source.identifier: source for source in sources}
-    return commingle_many(
+    return weighted_sample(
         [(by_identifier[draw.identifier].quality, draw.quantity.hundredths) for draw in draws]
     )

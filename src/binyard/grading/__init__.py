@@ -6,6 +6,7 @@ from binyard.grading.factors import (
     FactorSample,
     Odor,
     direction_of,
+    weighted_sample,
 )
 from binyard.grading.grade import (
     GradeResult,
@@ -43,4 +44,5 @@ __all__ = [
     "determine",
     "direction_of",
     "table_for",
+    "weighted_sample",
 ]

@@ -15,12 +15,18 @@ re-decided in four places.
 Second, **heat damage is a subset of total damage**. A sample with 0.4% heat
 and 0.2% total is not a strict sample, it is a typo, and it is rejected here
 rather than producing a grade nobody can defend.
+
+Weighting several readings into one lives here too. Two callers need it, a bin
+taking a second load and a probe set becoming a composite, and putting it in
+either of them made the other import upward through the package. A release
+check caught the cycle; the fix was to notice that averaging factors is a fact
+about factors and not about bins.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from enum import StrEnum
 
 from binyard.errors import FactorOutOfRange, ValidationError
@@ -179,3 +185,48 @@ class FactorSample:
         described["odor"] = self.odor.value
         described["infested"] = "yes" if self.infested else "no"
         return described
+
+
+_ODOR_SEVERITY: dict[Odor, int] = {
+    Odor.NONE: 0,
+    Odor.MUSTY: 1,
+    Odor.SOUR: 2,
+    Odor.COMMERCIALLY_OBJECTIONABLE: 3,
+}
+
+
+def weighted_sample(lots: list[tuple[FactorSample, int]]) -> FactorSample:
+    """Weight several readings into one, in a single rounding.
+
+    Folding pairwise instead would round at every step, and a blend drawn from
+    eight bins can accumulate enough of that to report a hundredth of a point
+    over a ceiling the true average is under. One pass, one rounding.
+
+    Three things do not average and take the worse of the two instead:
+    infestation spreads, odor takes the worst, and both of those are properties
+    of the mass rather than of a reading.
+    """
+    if not lots:
+        raise ValidationError("nothing to weight together")
+    total = sum(weight for _, weight in lots)
+    if total <= 0:
+        raise ValidationError("weights have to sum to something positive", total=total)
+
+    def blend(attribute: str) -> Percent:
+        running = Decimal(0)
+        for sample, weight in lots:
+            running += Decimal(getattr(sample, attribute).hundredths) * weight
+        mixed = running / total
+        return Percent(int(mixed.quantize(Decimal("1"), rounding=ROUND_HALF_UP)))
+
+    weighed = Decimal(0)
+    for sample, weight in lots:
+        weighed += sample.test_weight * weight
+
+    worst_odor = max((sample.odor for sample, _ in lots), key=lambda odor: _ODOR_SEVERITY[odor])
+    return FactorSample(
+        **{name.value: blend(name.value) for name in _PERCENT_FACTORS},
+        test_weight=(weighed / total).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP),
+        odor=worst_odor,
+        infested=any(sample.infested for sample, _ in lots),
+    )

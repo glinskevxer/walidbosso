@@ -47,8 +47,12 @@ format: ## ruff, fixing what it can
 types: ## mypy over the package
 	$(BIN)/mypy $(PKG)
 
+.PHONY: release-check
+release-check: ## refuse a tree that is not releasable
+	$(BIN)/python scripts/check_release.py
+
 .PHONY: check
-check: lint types test ## everything CI runs
+check: lint types test release-check ## everything CI runs
 
 .PHONY: migrate
 migrate: ## bring $(DB) up to the shipped schema
