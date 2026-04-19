@@ -23,6 +23,7 @@ from binyard import __version__
 from binyard.cli.commands import (
     bins,
     blend,
+    dryer,
     feed,
     migrate,
     receive,
@@ -35,7 +36,7 @@ from binyard.errors import BinyardError
 
 __all__ = ["build_parser", "main", "run"]
 
-_COMMANDS = (migrate, bins, receive, feed, blend, ship, settle, report)
+_COMMANDS = (migrate, bins, receive, feed, dryer, blend, ship, settle, report)
 
 
 def build_parser() -> argparse.ArgumentParser:

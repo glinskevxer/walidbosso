@@ -56,6 +56,7 @@ class TestParser:
             "bins",
             "receive",
             "feed",
+            "dryer",
             "blend",
             "ship",
             "settle",
