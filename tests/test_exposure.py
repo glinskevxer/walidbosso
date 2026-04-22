@@ -214,7 +214,9 @@ class TestBooksBalance:
             ],
             purchases=[],
         )
-        check_books_balance(report.for_commodity("CORN"))
+        corn = report.for_commodity("CORN")
+        check_books_balance(corn)
+        assert corn.owned + corn.customer_owned == corn.on_hand
 
     def test_a_bushel_missing_from_the_books_is_caught(self):
         report = build_exposure(
