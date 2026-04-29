@@ -33,6 +33,7 @@ from binyard.settlement.statement import Settlement
 from binyard.store.drying import DryerStore
 from binyard.store.feed import FeedLog
 from binyard.store.orders import OrderStore
+from binyard.store.replies import ReplyStore
 from binyard.tickets.ticket import ScaleTicket
 
 __all__ = [
@@ -41,6 +42,7 @@ __all__ = [
     "FeedLog",
     "ObligationStore",
     "OrderStore",
+    "ReplyStore",
     "SettlementStore",
     "TicketStore",
     "UnitOfWork",
@@ -168,6 +170,9 @@ class UnitOfWork(Protocol):
 
     @property
     def feed(self) -> FeedLog: ...
+
+    @property
+    def replies(self) -> ReplyStore: ...
 
     @property
     def yard(self) -> YardStore: ...

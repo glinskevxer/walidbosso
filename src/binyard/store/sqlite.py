@@ -67,6 +67,7 @@ from binyard.store.mappers import (
 )
 from binyard.store.migrate import migrate
 from binyard.store.orders import SqliteOrderStore
+from binyard.store.replies import SqliteReplyStore
 from binyard.tickets.ticket import ScaleTicket, TicketKind, TicketStatus
 
 __all__ = ["SqliteUnitOfWork", "connect"]
@@ -642,6 +643,7 @@ class SqliteUnitOfWork:
         self.orders = SqliteOrderStore(connection)
         self.dryer = SqliteDryerStore(connection)
         self.feed = SqliteFeedLog(connection)
+        self.replies = SqliteReplyStore(connection)
         self.yard = SqliteYardStore(connection)
 
     @classmethod

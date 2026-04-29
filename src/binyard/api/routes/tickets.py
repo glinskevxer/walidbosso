@@ -18,10 +18,11 @@ second opinion about what a load graded.
 
 from __future__ import annotations
 
+import json
 from datetime import date, datetime
 
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
 from binyard.api.app import work_for
@@ -35,6 +36,7 @@ from binyard.identity import Sequence, TicketNumber, crop_year_of
 from binyard.obligations.obligation import ObligationKind
 from binyard.observability import metrics
 from binyard.services.receiving import ReceiptRequest, receive_load
+from binyard.store.replies import StoredReply, digest
 from binyard.tickets.weights import ScaleWeights, TareSource
 
 __all__ = ["probes_from", "routes", "sample_from", "weights_from"]
@@ -83,8 +85,30 @@ def probes_from(reader: Reader) -> tuple[Probe, ...]:
     )
 
 
-async def create(request: Request) -> JSONResponse:
-    reader = reader_for(await request.json())
+IDEMPOTENCY_HEADER = "idempotency-key"
+
+
+async def create(request: Request) -> Response:
+    raw = await request.body()
+    key = request.headers.get(IDEMPOTENCY_HEADER)
+    route = "POST /tickets"
+    fingerprint = digest(route, raw)
+
+    if key:
+        work = work_for(request)
+        try:
+            stored = work.replies.replay(key, route, fingerprint)
+        finally:
+            work.close()
+        if stored is not None:
+            return Response(
+                stored.body,
+                status_code=stored.status,
+                media_type="application/json",
+                headers={"idempotent-replay": "true"},
+            )
+
+    reader = reader_for(json.loads(raw))
     standard = reader.commodity("commodity")
     weighed_on = reader.day("weighed_on", date.today())
     # The ledger is dated from the weighing, not from the wall clock. A load
@@ -122,7 +146,24 @@ async def create(request: Request) -> JSONResponse:
         work.close()
 
     metrics.counter("loads_received_total", commodity=standard.code)
-    return JSONResponse(receipt.describe(), status_code=201)
+    body = json.dumps(receipt.describe())
+    if key:
+        keeper = work_for(request)
+        try:
+            keeper.replies.remember(
+                StoredReply(
+                    key=key,
+                    route=route,
+                    request_hash=fingerprint,
+                    status=201,
+                    body=body,
+                    stored_at=datetime.now(),
+                )
+            )
+            keeper.commit()
+        finally:
+            keeper.close()
+    return Response(body, status_code=201, media_type="application/json")
 
 
 async def listing(request: Request) -> JSONResponse:
