@@ -54,6 +54,7 @@ def create_app(
         dryer,
         feed,
         health,
+        index,
         obligations,
         reports,
         tickets,
@@ -62,6 +63,7 @@ def create_app(
 
     routes: list[Route] = []
     for module in (
+        index,
         health,
         tickets,
         yard,
