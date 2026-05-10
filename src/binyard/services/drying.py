@@ -25,11 +25,15 @@ from binyard.drying.run import DryerRun, FuelUse, RunStatus
 from binyard.errors import ValidationError
 from binyard.grading.factors import FactorSample
 from binyard.inventory.ledger import Movement, MovementKind
+from binyard.observability import metrics
+from binyard.observability.logging import get_logger
 from binyard.percent import Percent
 from binyard.shrink import ShrinkPolicy
 from binyard.store.protocol import UnitOfWork
 
 __all__ = ["DryingOutcome", "abandon_run", "finish_run", "start_run"]
+
+_log = get_logger("binyard.drying")
 
 
 @dataclass(frozen=True, slots=True)
@@ -143,6 +147,17 @@ def finish_run(
     work.yard.save(yard)
     work.dryer.replace(finished)
     work.commit()
+
+    _log.info(
+        "dryer run finished",
+        run=identifier,
+        went_in=str(run.wet_bushels),
+        came_back=str(dry_bushels),
+        points=str(finished.points_removed),
+        kept=str(loss),
+        gallons=None if finished.fuel is None else str(finished.fuel.gallons),
+    )
+    metrics.counter("dryer_runs_total", commodity=run.commodity_code)
     return DryingOutcome(run=finished, posted_loss=loss, dry_quality=quality)
 
 

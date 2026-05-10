@@ -33,12 +33,16 @@ from binyard.errors import TicketStateError, ValidationError
 from binyard.identity import TicketNumber
 from binyard.money import Money, Price
 from binyard.obligations.storage import StorageTerms, accrue
+from binyard.observability import metrics
+from binyard.observability.logging import get_logger
 from binyard.percent import Percent
 from binyard.settlement.statement import ChargeKind, Checkoff, Settlement, SettlementBuilder
 from binyard.store.protocol import UnitOfWork
 from binyard.tickets.ticket import TicketStatus
 
 __all__ = ["SettlementRequest", "settle_tickets"]
+
+_log = get_logger("binyard.settling")
 
 
 @dataclass(frozen=True, slots=True)
@@ -160,6 +164,17 @@ def settle_tickets(
         builder.charge(ChargeKind.ADVANCE, "advances already paid", request.advances)
 
     settlement = builder.build()
+    _log.info(
+        "settlement written",
+        settlement=settlement.number,
+        account=request.account,
+        commodity=request.commodity_code,
+        tickets=len(tickets),
+        quantity=str(settlement.quantity),
+        gross=str(settlement.gross),
+        net=str(settlement.net),
+    )
+    metrics.counter("settlements_written_total", commodity=request.commodity_code)
     work.settlements.add(settlement)
     for ticket in tickets:
         work.tickets.replace(ticket.settled(at=request.at, by=request.by, note=request.number))

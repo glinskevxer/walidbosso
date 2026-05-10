@@ -15,3 +15,4 @@ tests
 docs
 Makefile
 docker-compose.yml
+.hypothesis

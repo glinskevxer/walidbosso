@@ -28,12 +28,16 @@ from binyard.identity import Sequence, TicketNumber
 from binyard.loadout.carrier import Carrier, capacity_bushels
 from binyard.loadout.order import LoadoutOrder, split_into_loads
 from binyard.obligations.obligation import ObligationKind, Release, StorageObligation
+from binyard.observability import metrics
+from binyard.observability.logging import get_logger
 from binyard.store.protocol import UnitOfWork
 from binyard.tickets.ticket import ScaleTicket, TicketKind
 from binyard.tickets.weights import ScaleWeights, TareSource
 from binyard.units import Weight
 
 __all__ = ["Shipment", "ShipmentRequest", "plan_shipment", "ship_next_load"]
+
+_log = get_logger("binyard.shipping")
 
 
 @dataclass(frozen=True, slots=True)
@@ -158,7 +162,17 @@ def ship_next_load(
     work.tickets.add(ticket)
     work.yard.save(yard)
     work.commit()
-    _ = released
+
+    _log.info(
+        "load shipped",
+        ticket=str(number),
+        order=order.identifier,
+        carrier=carrier.identifier,
+        quantity=str(quantity),
+        bins=len(draws),
+        obligations=len(released),
+    )
+    metrics.counter("loads_shipped_total", commodity=order.commodity_code)
     return moved, ticket
 
 

@@ -27,12 +27,16 @@ from binyard.errors import BinyardError, ValidationError
 from binyard.feed.reader import FeedBatch, FeedRecord
 from binyard.grading.factors import FactorSample
 from binyard.identity import Sequence
+from binyard.observability import metrics
+from binyard.observability.logging import bound, get_logger
 from binyard.services.receiving import ReceiptRequest, receive_load
 from binyard.store.feed import FeedEntry
 from binyard.store.protocol import UnitOfWork
 from binyard.tickets.weights import ScaleWeights, TareSource
 
 __all__ = ["ImportResult", "ImportedRecord", "Outcome", "import_feed"]
+
+_log = get_logger("binyard.importing")
 
 
 class Outcome:
@@ -122,50 +126,65 @@ def import_feed(
     outcomes: list[ImportedRecord] = []
     taken = Bushels.zero()
 
-    for record in batch.records:
-        if work.feed.seen(record.fingerprint):
-            previous = work.feed.get(record.fingerprint)
-            outcomes.append(
-                ImportedRecord(
-                    line_number=record.line_number,
+    with bound(feed=source):
+        for record in batch.records:
+            if work.feed.seen(record.fingerprint):
+                previous = work.feed.get(record.fingerprint)
+                outcomes.append(
+                    ImportedRecord(
+                        line_number=record.line_number,
+                        fingerprint=record.fingerprint,
+                        outcome=Outcome.DUPLICATE,
+                        ticket_number=previous.ticket_number,
+                        reason=f"already imported from {previous.source}",
+                    )
+                )
+                continue
+
+            result = _one(
+                work,
+                record,
+                sequence,
+                book=book,
+                bin_for=bin_for,
+                at=stamped,
+                priority=priority,
+            )
+            outcomes.append(result)
+            work.feed.add(
+                FeedEntry(
                     fingerprint=record.fingerprint,
-                    outcome=Outcome.DUPLICATE,
-                    ticket_number=previous.ticket_number,
-                    reason=f"already imported from {previous.source}",
+                    imported_at=stamped,
+                    source=source,
+                    outcome=result.outcome,
+                    ticket_number=result.ticket_number,
+                    note=result.reason,
                 )
             )
-            continue
-
-        result = _one(
-            work,
-            record,
-            sequence,
-            book=book,
-            bin_for=bin_for,
-            at=stamped,
-            priority=priority,
-        )
-        outcomes.append(result)
-        work.feed.add(
-            FeedEntry(
-                fingerprint=record.fingerprint,
-                imported_at=stamped,
-                source=source,
-                outcome=result.outcome,
-                ticket_number=result.ticket_number,
-                note=result.reason,
-            )
-        )
-        if result.outcome == Outcome.TAKEN:
-            taken = taken + _net_of(work, result)
+            if result.outcome == Outcome.TAKEN:
+                taken = taken + _net_of(work, result)
 
     work.commit()
-    return ImportResult(
+    imported = ImportResult(
         source=source,
         records=tuple(outcomes),
         rejected_lines=batch.refused,
         bushels_taken=taken,
     )
+    _log.info(
+        "feed imported",
+        source=source,
+        taken=imported.taken,
+        duplicates=imported.duplicates,
+        refused=imported.count(Outcome.REFUSED),
+        unreadable=batch.refused,
+        bushels=str(taken),
+    )
+    for outcome in Outcome.ALL:
+        count = imported.count(outcome)
+        if count:
+            metrics.counter("feed_records_total", float(count), outcome=outcome)
+    return imported
 
 
 def _one(

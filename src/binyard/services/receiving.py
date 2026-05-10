@@ -45,12 +45,16 @@ from binyard.grading.factors import FactorName, FactorSample
 from binyard.grading.sampling import Probe, build_composite
 from binyard.identity import Sequence, TicketNumber
 from binyard.obligations.obligation import ObligationKind, StorageObligation
+from binyard.observability import metrics
+from binyard.observability.logging import bound, get_logger
 from binyard.shrink import ShrinkPolicy
 from binyard.store.protocol import UnitOfWork
 from binyard.tickets.ticket import ScaleTicket, TicketKind
 from binyard.tickets.weights import ScaleWeights
 
 __all__ = ["Receipt", "ReceiptRequest", "receive_load"]
+
+_log = get_logger("binyard.receiving")
 
 
 @dataclass(frozen=True, slots=True)
@@ -142,6 +146,12 @@ def receive_load(
     sample, review_notes = request.composite()
 
     if sample.moisture > standard.receiving_moisture_ceiling:
+        _log.info(
+            "load turned away at the pit",
+            moisture=str(sample.moisture),
+            ceiling=str(standard.receiving_moisture_ceiling),
+        )
+        metrics.counter("loads_refused_total", commodity=standard.code, reason="wet")
         raise TicketError(
             "that load is too wet to take without drying",
             moisture=str(sample.moisture),
@@ -149,6 +159,20 @@ def receive_load(
         )
 
     number = _next_number(work, sequence)
+    with bound(ticket=str(number), commodity=standard.code, account=request.account):
+        return _run(work, request, sample, review_notes, number, shrink_policy, book)
+
+
+def _run(
+    work: UnitOfWork,
+    request: ReceiptRequest,
+    sample: FactorSample,
+    review_notes: tuple[str, ...],
+    number: TicketNumber,
+    shrink_policy: ShrinkPolicy,
+    book: ScheduleBook,
+) -> Receipt:
+    standard = request.standard
     ticket = ScaleTicket(
         number=number,
         kind=TicketKind.INBOUND,
@@ -165,6 +189,13 @@ def receive_load(
     assert ticket.grade is not None
     assessment = assess(ticket.grade, ticket.net_bushels or Bushels.zero(), schedule)
     if assessment.rejected:
+        _log.info(
+            "load refused by the board",
+            factor=(
+                assessment.rejecting_factor.value if assessment.rejecting_factor else "unknown"
+            ),
+        )
+        metrics.counter("loads_refused_total", commodity=standard.code, reason="board")
         raise TicketError(
             "the board rejects that load outright",
             factor=(
