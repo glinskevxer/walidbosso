@@ -268,6 +268,25 @@ def _run(
     work.yard.save(yard)
     work.commit()
 
+    graded = ticket.grade
+    assert graded is not None
+    _log.info(
+        "load received",
+        grade=graded.label,
+        gross=str(ticket.gross_bushels),
+        net=str(net),
+        into=request.bin_identifier,
+        contracts=len(filled),
+        to_storage=str(plan.to_storage),
+        review=len(review_notes),
+    )
+    metrics.counter("loads_received_total", commodity=standard.code)
+    metrics.gauge(
+        "bin_bushels",
+        float(yard.contents_of(request.bin_identifier).quantity.amount),
+        bin=request.bin_identifier,
+    )
+
     return Receipt(
         ticket=ticket,
         assessment=assessment,
