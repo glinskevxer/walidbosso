@@ -26,8 +26,13 @@ test: ## run the suite
 	$(BIN)/pytest
 
 .PHONY: cover
-cover: ## run the suite with coverage
+cover: ## run the suite with coverage, failing under the floor
 	$(BIN)/pytest --cov=binyard --cov-report=term-missing --cov-report=xml
+
+.PHONY: cover-html
+cover-html: ## the same, as a browsable report
+	$(BIN)/pytest --cov=binyard --cov-report=html
+	@echo "open htmlcov/index.html"
 
 .PHONY: fast
 fast: ## run everything except the slow properties

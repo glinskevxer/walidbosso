@@ -92,6 +92,11 @@ source = ["binyard"]
 omit = ["*/cli/main.py"]
 
 [tool.coverage.report]
+# The floor is a ratchet, not a target. It sits a little under where the suite
+# actually is, so an ordinary change cannot trip it and a module landing with
+# no tests at all can. Raise it when the real number moves up, never lower it
+# to make a build pass.
+fail_under = 90
 show_missing = true
 skip_covered = true
 exclude_lines = [
