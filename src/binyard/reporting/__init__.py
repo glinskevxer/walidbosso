@@ -1,5 +1,6 @@
 """Rendering reports for a terminal, a spreadsheet or another program."""
 
+from binyard.reporting.exports import Format, Written, suggested_name, write_table
 from binyard.reporting.reports import (
     bin_table,
     blend_table,
@@ -14,7 +15,9 @@ from binyard.reporting.table import Align, Column, Table, to_csv, to_json, to_te
 __all__ = [
     "Align",
     "Column",
+    "Format",
     "Table",
+    "Written",
     "bin_table",
     "blend_table",
     "discount_table",
@@ -22,7 +25,9 @@ __all__ = [
     "obligation_table",
     "position_table",
     "settlement_table",
+    "suggested_name",
     "to_csv",
     "to_json",
     "to_text",
+    "write_table",
 ]

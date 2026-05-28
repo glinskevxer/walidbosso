@@ -72,6 +72,21 @@ class Context:
         else:
             self.out.write(to_text(table))
 
+    def write(self, table: Table, path: str, *, overwrite: bool = False) -> None:
+        """Send a table to a file instead of to the terminal."""
+        from binyard.reporting.exports import Format, write_table
+
+        written = write_table(
+            table, path, Format(self.output_format.value), overwrite=overwrite
+        )
+        self.say(f"wrote {written.rows} rows to {written.path}")
+
+    def emit_or_write(self, table: Table, path: str | None, *, overwrite: bool = False) -> None:
+        if path is None:
+            self.emit(table)
+        else:
+            self.write(table, path, overwrite=overwrite)
+
     def say(self, line: str) -> None:
         """A note for a human. Suppressed by ``--quiet`` and never in JSON."""
         if self.quiet or self.output_format is OutputFormat.JSON:
