@@ -17,11 +17,15 @@ from __future__ import annotations
 
 import argparse
 
+from binyard.bushels import Bushels, bushels
 from binyard.cli.context import Context
-from binyard.reporting.reports import obligation_table, position_table
+from binyard.commodity import lookup
+from binyard.errors import ValidationError
+from binyard.reporting.reports import exposure_table, obligation_table, position_table
 from binyard.services.reporting import (
     day_sheet,
     examiner_report,
+    exposure_on,
     position_on,
     review_queue,
 )
@@ -52,6 +56,17 @@ def register(subparsers: argparse._SubParsersAction) -> None:
         help="print one of the four tables instead of all of them",
     )
     day.set_defaults(handler=_day)
+
+    exposure = inner.add_parser("exposure", help="the market position, not the inventory")
+    exposure.add_argument(
+        "--sold",
+        dest="sales",
+        action="append",
+        default=[],
+        metavar="CROP=BUSHELS",
+        help="forward sales this package does not hold, repeatable",
+    )
+    exposure.set_defaults(handler=_exposure)
 
     review = inner.add_parser("review", help="tickets somebody has to look at")
     review.set_defaults(handler=_review)
@@ -96,6 +111,21 @@ def _day(context: Context, arguments: argparse.Namespace) -> int:
         context.say("")
     context.say(f"received {sheet.received}, shipped {sheet.shipped}")
     return 0
+
+
+def _exposure(context: Context, arguments: argparse.Namespace) -> int:
+    sales: dict[str, Bushels] = {}
+    for text in arguments.sales:
+        if "=" not in text:
+            raise ValidationError("a sale is written CROP=BUSHELS", got=text)
+        crop, _, quantity = text.partition("=")
+        sales[lookup(crop).code] = bushels(quantity.strip())
+
+    report = exposure_on(context.work(), on=context.on, sales=sales)
+    context.emit_or_write(exposure_table(report), arguments.out, overwrite=arguments.overwrite)
+    for short in report.shorts:
+        context.warn(f"{short.commodity_code} is short {short.unhedged}")
+    return 1 if report.shorts else 0
 
 
 def _review(context: Context, arguments: argparse.Namespace) -> int:

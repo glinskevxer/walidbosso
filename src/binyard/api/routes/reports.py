@@ -18,11 +18,14 @@ from starlette.responses import JSONResponse, PlainTextResponse, Response
 from starlette.routing import Route
 
 from binyard.api.app import work_for
+from binyard.bushels import Bushels
+from binyard.commodity import lookup
 from binyard.errors import ValidationError
 from binyard.reporting.table import Table, to_csv, to_json, to_text
 from binyard.services.reporting import (
     day_sheet,
     examiner_report,
+    exposure_on,
     position_on,
     review_queue,
 )
@@ -35,6 +38,7 @@ def routes() -> list[Route]:
         Route("/reports/position", position, methods=["GET"], name="position"),
         Route("/reports/examiner", examiner, methods=["GET"], name="examiner"),
         Route("/reports/day", day, methods=["GET"], name="day_sheet"),
+        Route("/reports/exposure", exposure, methods=["GET"], name="exposure"),
         Route("/reports/review", review, methods=["GET"], name="review_queue"),
     ]
 
@@ -105,6 +109,26 @@ async def day(request: Request) -> Response:
         payload = sheet.describe()
         payload["tables"] = {name: to_json(table) for name, table in tables.items()}
         return JSONResponse(payload)
+    finally:
+        work.close()
+
+
+async def exposure(request: Request) -> Response:
+    sales: dict[str, Bushels] = {}
+    for raw in request.query_params.getlist("sold"):
+        if ":" not in raw:
+            raise ValidationError("a sale is written CROP:BUSHELS", got=raw)
+        crop, _, quantity = raw.partition(":")
+        sales[lookup(crop).code] = Bushels.of(quantity.strip())
+
+    work = work_for(request)
+    try:
+        report = exposure_on(work, on=_on(request), sales=sales)
+        if "text/" in request.headers.get("accept", ""):
+            from binyard.reporting.reports import exposure_table
+
+            return render(request, exposure_table(report))
+        return JSONResponse(report.describe())
     finally:
         work.close()
 

@@ -14,6 +14,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
+from binyard.analysis.exposure import ExposureReport
 from binyard.blend.planner import BlendPlan
 from binyard.discounts.apply import Assessment
 from binyard.inventory.yard import Yard
@@ -79,6 +80,27 @@ def examiner_statement(report: PositionReport) -> Table:
         title=(f"Warehouse examiner statement, {report.location}, {report.on.isoformat()}"),
         columns=columns,
         rows=tuple(rows),
+    )
+
+
+def exposure_table(report: ExposureReport) -> Table:
+    """The market position: what the house is long, short and holding for others."""
+    columns = (
+        Column("commodity", "Crop"),
+        Column.number("on_hand", "On hand"),
+        Column.number("owned", "Owned"),
+        Column.number("owned_unpriced", "Unpriced"),
+        Column.number("customer_owned", "Customers"),
+        Column.number("sold_forward", "Sold"),
+        Column.number("flat_price_position", "Position"),
+        Column.number("basis_unfixed", "Basis open"),
+        Column.number("average_cost", "Avg cost"),
+        Column("short", "Short"),
+    )
+    return Table(
+        title=f"Market position on {report.on.isoformat()}",
+        columns=columns,
+        rows=tuple(item.describe() for item in report.exposures),
     )
 
 

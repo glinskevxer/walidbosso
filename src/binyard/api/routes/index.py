@@ -56,6 +56,7 @@ _PURPOSE: dict[str, str] = {
     "position": "inventory against obligations",
     "examiner": "the two column statement an examiner asks for",
     "day_sheet": "the close of business sheet",
+    "exposure": "the market position, which is not the inventory",
     "review_queue": "tickets somebody has to look at",
 }
 

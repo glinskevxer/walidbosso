@@ -15,7 +15,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime
 
+from binyard.analysis.exposure import ExposureReport, build_exposure
 from binyard.bushels import Bushels
+from binyard.contracts.contract import PurchaseContract
 from binyard.errors import ValidationError
 from binyard.identity import LocationCode
 from binyard.position.report import PositionReport, build_position
@@ -67,6 +69,42 @@ def position_on(work: UnitOfWork, *, on: date, location: LocationCode | str) -> 
         yard=work.yard.load(),
         obligations=list(work.obligations.as_of(on)),
         as_of=datetime.combine(on, datetime.max.time()),
+    )
+
+
+def exposure_on(
+    work: UnitOfWork, *, on: date, sales: dict[str, Bushels] | None = None
+) -> ExposureReport:
+    """The market position as it stood at the end of ``on``.
+
+    Forward sales come in as an argument. They are documents this package does
+    not hold, and deriving them from load-out orders would count a shipment as
+    a sale, which it is not: an order is how a sale gets filled.
+    """
+    yard = work.yard.load()
+    when = datetime.combine(on, datetime.max.time())
+    on_hand: dict[str, Bushels] = {}
+    for state in yard.states(when=when):
+        code = state.contents.commodity_code
+        if code is None:
+            continue
+        on_hand[code] = on_hand.get(code, Bushels.zero()) + state.contents.quantity
+
+    obligations = list(work.obligations.as_of(on))
+    purchases: list[PurchaseContract] = []
+    for obligation in obligations:
+        for contract in work.contracts.open_for(
+            obligation.account, obligation.commodity_code, on
+        ):
+            if contract.identifier not in {item.identifier for item in purchases}:
+                purchases.append(contract)
+
+    return build_exposure(
+        on=on,
+        on_hand=on_hand,
+        obligations=obligations,
+        purchases=purchases,
+        sales=sales,
     )
 
 
