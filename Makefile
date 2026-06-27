@@ -18,8 +18,12 @@ $(BIN)/python:
 	$(BIN)/pip install --upgrade pip
 
 .PHONY: install
-install: $(BIN)/python ## install the package and the dev tools
-	$(BIN)/pip install -e ".[api,dev]"
+install: $(BIN)/python ## install the package and the dev tools, to the lock
+	$(BIN)/pip install -c constraints.txt -e ".[api,dev]"
+
+.PHONY: pins
+pins: ## rewrite constraints.txt from pyproject
+	$(BIN)/python scripts/check_pins.py --write
 
 .PHONY: test
 test: ## run the suite
@@ -57,7 +61,11 @@ release-check: ## refuse a tree that is not releasable
 	$(BIN)/python scripts/check_release.py
 
 .PHONY: check
-check: lint types test release-check ## everything CI runs
+check: pins-check lint types test release-check ## everything CI runs
+
+.PHONY: pins-check
+pins-check: ## the pins are exact and the lock agrees
+	$(BIN)/python scripts/check_pins.py
 
 .PHONY: migrate
 migrate: ## bring $(DB) up to the shipped schema

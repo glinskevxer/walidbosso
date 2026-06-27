@@ -46,6 +46,13 @@ repos:
         pass_filenames: false
         files: ^tests/
 
+      - id: check-pins
+        name: exact pins, and a lock that agrees
+        entry: python scripts/check_pins.py
+        language: system
+        pass_filenames: false
+        files: ^(pyproject.toml|constraints.txt)$
+
       - id: no-real-money-in-floats
         name: no float arithmetic on money or bushels
         entry: python scripts/check_no_floats.py

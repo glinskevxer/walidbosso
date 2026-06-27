@@ -27,7 +27,9 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
       - name: install
-        run: pip install -e ".[api,dev]"
+        run: pip install -c constraints.txt -e ".[api,dev]"
+      - name: the pins are exact and the lock agrees
+        run: python scripts/check_pins.py
       - name: check
         run: ruff check src tests scripts
       - name: format
@@ -48,7 +50,7 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
       - name: install
-        run: pip install -e ".[api,dev]"
+        run: pip install -c constraints.txt -e ".[api,dev]"
       - name: mypy
         run: mypy
 
@@ -67,7 +69,7 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
       - name: install
-        run: pip install -e ".[api,dev]"
+        run: pip install -c constraints.txt -e ".[api,dev]"
       - name: pytest
         run: pytest --cov=binyard --cov-report=xml --cov-report=term-missing
       - name: the slow ones on their own, so a hang is obvious
@@ -91,7 +93,7 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
       - name: install
-        run: pip install -e ".[api,dev]"
+        run: pip install -c constraints.txt -e ".[api,dev]"
       - name: check the tree is releasable
         run: python scripts/check_release.py
       - name: the wheel builds and the console script runs from it
@@ -112,7 +114,7 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
       - name: install
-        run: pip install -e ".[api,dev]"
+        run: pip install -c constraints.txt -e ".[api,dev]"
       - name: migrate a fresh database
         run: binyard --database sqlite:///ci.sqlite3 migrate
       - name: migrating twice applies nothing

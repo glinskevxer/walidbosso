@@ -12,11 +12,12 @@ WORKDIR /build
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY pyproject.toml README.md ./
+COPY pyproject.toml README.md constraints.txt ./
 COPY src ./src
 
+# Installed against the lock, so the image resolves the same way twice.
 RUN pip install --upgrade pip setuptools wheel \
- && pip install ".[api,serve]"
+ && pip install -c constraints.txt ".[api,serve]"
 
 
 FROM python:3.12-slim-bookworm AS runtime
