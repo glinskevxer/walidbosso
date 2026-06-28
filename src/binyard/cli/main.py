@@ -16,7 +16,6 @@ from __future__ import annotations
 import argparse
 import sys
 from collections.abc import Sequence
-from datetime import date
 from typing import TextIO
 
 from binyard import __version__
@@ -32,6 +31,7 @@ from binyard.cli.commands import (
     ship,
 )
 from binyard.cli.context import Context, OutputFormat, build_context
+from binyard.dates import read_day
 from binyard.errors import BinyardError
 
 __all__ = ["build_parser", "main", "run"]
@@ -58,7 +58,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--on",
-        type=date.fromisoformat,
+        type=lambda raw: read_day(raw, "--on"),
         help="the date to work as of, defaulting to today",
     )
     parser.add_argument("--quiet", action="store_true", help="drop the notes")

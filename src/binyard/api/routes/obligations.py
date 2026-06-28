@@ -21,6 +21,7 @@ from starlette.routing import Route
 
 from binyard.api.app import work_for
 from binyard.api.parsing import reader_for
+from binyard.dates import read_day
 from binyard.errors import NotFound, ValidationError
 from binyard.obligations.storage import Accrual, StorageTerms, accrue
 
@@ -124,11 +125,7 @@ async def cancel(request: Request) -> JSONResponse:
 async def storage(request: Request) -> JSONResponse:
     identifier = request.path_params["identifier"]
     settings = request.app.state.settings
-    raw = request.query_params.get("through")
-    try:
-        through = date.fromisoformat(raw) if raw else date.today()
-    except ValueError as exc:
-        raise ValidationError("through is written YYYY-MM-DD", got=raw) from exc
+    through = read_day(request.query_params.get("through"), "through", date.today())
 
     accrual = request.query_params.get("accrual")
     terms = settings.storage_terms

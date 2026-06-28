@@ -28,6 +28,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from binyard.bushels import Bushels
+from binyard.dates import end_of
 from binyard.errors import ValidationError
 from binyard.inventory.yard import Yard
 from binyard.obligations.obligation import ObligationKind, ObligationStatus, StorageObligation
@@ -142,7 +143,7 @@ def build_position(
     if not location.strip():
         raise ValidationError("a position report needs a location")
 
-    when = as_of if as_of is not None else datetime.combine(on, datetime.max.time())
+    when = as_of if as_of is not None else end_of(on)
     states = yard.states(when=when)
 
     codes: list[str] = []

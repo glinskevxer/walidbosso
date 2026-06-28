@@ -18,6 +18,7 @@ from starlette.routing import Route
 from binyard.api.app import work_for
 from binyard.api.parsing import reader_for
 from binyard.contracts.contract import PriceKind, PurchaseContract
+from binyard.dates import read_day
 from binyard.errors import ValidationError
 from binyard.money import Price
 
@@ -44,12 +45,7 @@ async def listing(request: Request) -> JSONResponse:
     on = request.query_params.get("on")
     if not (account and crop and on):
         raise ValidationError("listing contracts needs an account, a commodity and a date")
-    from datetime import date
-
-    try:
-        day = date.fromisoformat(on)
-    except ValueError as exc:
-        raise ValidationError("on is written YYYY-MM-DD", got=on) from exc
+    day = read_day(on, "on")
 
     work = work_for(request)
     try:

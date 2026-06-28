@@ -28,6 +28,7 @@ from typing import Any, TypeVar
 
 from binyard.bushels import Bushels
 from binyard.commodity import CropStandard, lookup
+from binyard.dates import read_day, read_moment
 from binyard.errors import ValidationError
 from binyard.percent import Percent
 from binyard.units import Weight, parse_weight
@@ -111,30 +112,14 @@ class Reader:
             ) from exc
 
     def day(self, name: str, default: Any = _MISSING) -> date:
-        value = self._raw(name, default)
-        if isinstance(value, date):
-            return value
-        try:
-            return date.fromisoformat(str(value))
-        except ValueError as exc:
-            raise ValidationError(
-                "expected a date as YYYY-MM-DD", field=self._where(name), got=repr(value)
-            ) from exc
+        return read_day(self._raw(name, default), self._where(name))
 
     def optional_day(self, name: str) -> date | None:
         value = self._raw(name, None)
         return None if value is None else self.day(name)
 
     def timestamp(self, name: str, default: Any = _MISSING) -> datetime:
-        value = self._raw(name, default)
-        if isinstance(value, datetime):
-            return value
-        try:
-            return datetime.fromisoformat(str(value))
-        except ValueError as exc:
-            raise ValidationError(
-                "expected an ISO timestamp", field=self._where(name), got=repr(value)
-            ) from exc
+        return read_moment(self._raw(name, default), self._where(name))
 
     def choice(self, name: str, options: type[E], default: Any = _MISSING) -> E:
         value = self._raw(name, default)

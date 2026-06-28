@@ -29,6 +29,7 @@ from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from enum import StrEnum
 
+from binyard.dates import each_day
 from binyard.errors import LoadoutError, ValidationError
 from binyard.money import Money, Price
 
@@ -90,13 +91,7 @@ class DemurrageTerms:
         """Days between two dates that the tariff actually counts, inclusive."""
         if last < first:
             return 0
-        total = 0
-        day = first
-        while day <= last:
-            if self.counts(day):
-                total += 1
-            day += timedelta(days=1)
-        return total
+        return sum(1 for day in each_day(first, last) if self.counts(day))
 
 
 @dataclass(frozen=True, slots=True)

@@ -20,6 +20,7 @@ from starlette.routing import Route
 from binyard.api.app import work_for
 from binyard.bushels import Bushels
 from binyard.commodity import lookup
+from binyard.dates import read_day
 from binyard.errors import ValidationError
 from binyard.reporting.table import Table, to_csv, to_json, to_text
 from binyard.services.reporting import (
@@ -44,13 +45,7 @@ def routes() -> list[Route]:
 
 
 def _on(request: Request) -> date:
-    raw = request.query_params.get("on")
-    if raw is None:
-        return date.today()
-    try:
-        return date.fromisoformat(raw)
-    except ValueError as exc:
-        raise ValidationError("on is written YYYY-MM-DD", got=raw) from exc
+    return read_day(request.query_params.get("on"), "on", date.today())
 
 
 def render(request: Request, table: Table) -> Response:

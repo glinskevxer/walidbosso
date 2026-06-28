@@ -28,6 +28,7 @@ from starlette.routing import Route
 from binyard.api.app import work_for
 from binyard.api.parsing import Reader, reader_for
 from binyard.contracts.application import Priority
+from binyard.dates import read_day
 from binyard.discounts.posted import default_book
 from binyard.errors import ValidationError
 from binyard.grading.factors import FactorSample, Odor
@@ -177,11 +178,7 @@ async def listing(request: Request) -> JSONResponse:
         if account:
             found = work.tickets.for_account(account)
         elif day:
-            try:
-                on = date.fromisoformat(day)
-            except ValueError as exc:
-                raise ValidationError("day is written YYYY-MM-DD", got=day) from exc
-            found = work.tickets.weighed_on(on)
+            found = work.tickets.weighed_on(read_day(day, "day"))
         else:
             found = work.tickets.open_tickets()
         return JSONResponse(

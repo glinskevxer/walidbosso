@@ -22,7 +22,7 @@ from starlette.routing import Route
 
 from binyard.api.app import work_for
 from binyard.api.parsing import reader_for
-from binyard.errors import ValidationError
+from binyard.dates import read_moment
 from binyard.inventory.bin import Bin, BinKind
 from binyard.reporting.reports import bin_table
 
@@ -41,12 +41,7 @@ def routes() -> list[Route]:
 
 def _when(request: Request) -> datetime | None:
     raw = request.query_params.get("when")
-    if raw is None:
-        return None
-    try:
-        return datetime.fromisoformat(raw)
-    except ValueError as exc:
-        raise ValidationError("when is an ISO timestamp", got=raw) from exc
+    return None if raw is None else read_moment(raw, "when")
 
 
 async def listing(request: Request) -> JSONResponse:
