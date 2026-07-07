@@ -50,6 +50,8 @@ class Settings:
     house_name: str
     api_key: str | None = None
     max_request_bytes: int = 1_048_576
+    #: Writes per minute per caller. Zero turns throttling off entirely.
+    writes_per_minute: int = 240
     log_level: str = "INFO"
     debug: bool = False
     allowed_origins: tuple[str, ...] = field(default=())
@@ -61,6 +63,10 @@ class Settings:
             raise ConfigurationError("the house needs a name")
         if not self.database_url.strip():
             raise ConfigurationError("a database url is required")
+        if self.writes_per_minute < 0:
+            raise ConfigurationError(
+                "a write rate cannot be negative", rate=self.writes_per_minute
+            )
         if self.max_request_bytes < 1024:
             raise ConfigurationError(
                 "the request ceiling is too small to hold a ticket",
@@ -89,6 +95,7 @@ class Settings:
             "drying_rate_per_point": str(self.drying_rate_per_point),
             "minimum_bin_draw": str(self.minimum_bin_draw),
             "requires_api_key": self.requires_api_key,
+            "writes_per_minute": self.writes_per_minute,
             "log_level": self.log_level.upper(),
             "debug": self.debug,
         }
@@ -122,6 +129,7 @@ def load_settings(environment: Mapping[str, str] | None = None, *, today=None) -
         house_name=read.text("HOUSE_NAME", "West Branch Grain"),
         api_key=read.optional("API_KEY"),
         max_request_bytes=read.integer("MAX_REQUEST_BYTES", 1_048_576),
+        writes_per_minute=read.integer("WRITES_PER_MINUTE", 240),
         log_level=read.text("LOG_LEVEL", "INFO"),
         debug=read.flag("DEBUG", False),
         allowed_origins=read.csv("ALLOWED_ORIGINS"),

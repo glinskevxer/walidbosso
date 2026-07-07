@@ -15,6 +15,7 @@ services:
       BINYARD_DATABASE_URL: sqlite:////var/lib/binyard/binyard.sqlite3
       BINYARD_LOG_LEVEL: INFO
       BINYARD_WORKERS: "2"
+      BINYARD_WRITES_PER_MINUTE: "240"
       # Set BINYARD_API_KEY here to require a key on everything but the probes.
     ports:
       - "8000:8000"

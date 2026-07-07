@@ -45,6 +45,7 @@ _STATUS: dict[str, int] = {
     "not_found": 404,
     "conflict": 409,
     "configuration_error": 500,
+    "too_many_requests": 429,
 }
 
 

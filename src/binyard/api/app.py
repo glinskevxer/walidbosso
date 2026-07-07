@@ -30,6 +30,7 @@ from binyard.api.security import (
     BodyCeilingMiddleware,
     RequestContextMiddleware,
 )
+from binyard.api.throttle import ThrottleMiddleware
 from binyard.config import Settings, load_settings
 from binyard.observability.metrics import REGISTRY
 from binyard.store.migrate import pending
@@ -81,6 +82,8 @@ def create_app(
         Middleware(BodyCeilingMiddleware, ceiling=resolved.max_request_bytes),
         Middleware(ApiKeyMiddleware, api_key=resolved.api_key),
     ]
+    if resolved.writes_per_minute:
+        middleware.append(Middleware(ThrottleMiddleware, per_minute=resolved.writes_per_minute))
     if resolved.allowed_origins:
         middleware.append(
             Middleware(
