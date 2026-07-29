@@ -178,6 +178,7 @@ class EventLogger:
 
 
 def get_logger(name: str) -> EventLogger:
+    """A logger that takes its fields as keyword arguments."""
     return EventLogger(logging.getLogger(name))
 
 
@@ -187,10 +188,12 @@ def bind(**fields: Any) -> None:
 
 
 def clear() -> None:
+    """Empty the logging context."""
     _CONTEXT.set(_EMPTY)
 
 
 def current() -> Mapping[str, Any]:
+    """The fields bound in this context right now."""
     return dict(_CONTEXT.get())
 
 

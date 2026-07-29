@@ -41,6 +41,8 @@ class Sense(StrEnum):
 
 
 class Status(StrEnum):
+    """How a solve ended."""
+
     OPTIMAL = "optimal"
     INFEASIBLE = "infeasible"
     UNBOUNDED = "unbounded"

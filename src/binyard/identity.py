@@ -63,6 +63,7 @@ def crop_year_of(day: date) -> int:
 
 
 def crop_year_suffix(year: int) -> str:
+    """The two digit year a ticket number prints."""
     if not (1900 <= year <= 2999):
         raise ValidationError("that is not a crop year we can print", year=year)
     return f"{year % 100:02d}"

@@ -35,6 +35,7 @@ __all__ = ["render", "routes"]
 
 
 def routes() -> list[Route]:
+    """The routes this module serves."""
     return [
         Route("/reports/position", position, methods=["GET"], name="position"),
         Route("/reports/examiner", examiner, methods=["GET"], name="examiner"),

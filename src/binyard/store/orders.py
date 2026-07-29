@@ -50,6 +50,8 @@ class OrderStore:
 
 
 class SqliteOrderStore(OrderStore):
+    """Load-out orders and their loads, in two tables."""
+
     def __init__(self, connection: sqlite3.Connection) -> None:
         self._connection = connection
 
@@ -161,6 +163,8 @@ class SqliteOrderStore(OrderStore):
 
 
 class MemoryOrderStore(OrderStore):
+    """Load-out orders in a dictionary, keyed by identifier."""
+
     def __init__(self, orders: dict[str, LoadoutOrder] | None = None) -> None:
         self._orders: dict[str, LoadoutOrder] = dict(orders or {})
 

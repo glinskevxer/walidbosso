@@ -44,6 +44,7 @@ __all__ = ["probes_from", "routes", "sample_from", "weights_from"]
 
 
 def routes() -> list[Route]:
+    """The routes this module serves."""
     return [
         Route("/tickets", create, methods=["POST"], name="create_ticket"),
         Route("/tickets", listing, methods=["GET"], name="list_tickets"),
@@ -52,6 +53,7 @@ def routes() -> list[Route]:
 
 
 def weights_from(reader: Reader) -> ScaleWeights:
+    """Read a weighing out of a request body."""
     return ScaleWeights(
         gross=reader.weight("gross"),
         tare=reader.weight("tare"),
@@ -60,6 +62,7 @@ def weights_from(reader: Reader) -> ScaleWeights:
 
 
 def sample_from(reader: Reader) -> FactorSample:
+    """Read a set of factor readings out of a request body."""
     return FactorSample(
         moisture=reader.percent("moisture"),
         test_weight=reader.decimal("test_weight"),
@@ -76,6 +79,7 @@ def sample_from(reader: Reader) -> FactorSample:
 
 
 def probes_from(reader: Reader) -> tuple[Probe, ...]:
+    """Read the probe draws out of a request body."""
     return tuple(
         Probe(
             position=item.choice("position", Position),

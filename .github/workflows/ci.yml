@@ -38,6 +38,8 @@ jobs:
         run: python scripts/check_tests.py tests
       - name: nothing exact converted through a float
         run: python scripts/check_no_floats.py
+      - name: every public name says what it does
+        run: python scripts/check_docs.py
 
   types:
     name: mypy

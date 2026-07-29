@@ -61,6 +61,7 @@ def _common(parser: argparse.ArgumentParser) -> None:
 
 
 def register(subparsers: argparse._SubParsersAction) -> None:
+    """Register this subcommand's parser and its handler."""
     parser = subparsers.add_parser("settle", help="settle applied tickets")
     inner = parser.add_subparsers(dest="settle_command", required=True)
 

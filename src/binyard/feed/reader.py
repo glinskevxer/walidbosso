@@ -47,6 +47,8 @@ __all__ = [
 
 
 class FieldKind(StrEnum):
+    """What one column of the record holds."""
+
     TEXT = "text"
     INTEGER = "integer"
     DECIMAL = "decimal"

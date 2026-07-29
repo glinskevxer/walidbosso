@@ -55,6 +55,7 @@ def status_for(error: BinyardError) -> int:
 
 
 def error_response(error: BinyardError, *, request_id: str | None = None) -> JSONResponse:
+    """Render an error as the JSON body and status this package gives it."""
     payload: dict[str, Any] = error.as_dict()
     if request_id:
         payload["request_id"] = request_id

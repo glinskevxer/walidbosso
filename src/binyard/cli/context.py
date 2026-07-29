@@ -28,6 +28,8 @@ __all__ = ["Context", "OutputFormat", "build_context", "database_path"]
 
 
 class OutputFormat(StrEnum):
+    """How a table is rendered at the edge."""
+
     TEXT = "text"
     CSV = "csv"
     JSON = "json"

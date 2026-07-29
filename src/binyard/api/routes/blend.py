@@ -30,6 +30,7 @@ __all__ = ["routes", "spec_from"]
 
 
 def routes() -> list[Route]:
+    """The routes this module serves."""
     return [Route("/blends", plan, methods=["POST"], name="plan_blend")]
 
 

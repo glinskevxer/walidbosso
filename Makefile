@@ -42,6 +42,10 @@ cover-html: ## the same, as a browsable report
 fast: ## run everything except the slow properties
 	$(BIN)/pytest -m "not slow"
 
+.PHONY: docs-check
+docs-check: ## every public name says what it does
+	$(BIN)/python scripts/check_docs.py
+
 .PHONY: lint
 lint: ## ruff, in check mode
 	$(BIN)/ruff check $(PKG) tests scripts
@@ -61,7 +65,7 @@ release-check: ## refuse a tree that is not releasable
 	$(BIN)/python scripts/check_release.py
 
 .PHONY: check
-check: pins-check lint types test release-check ## everything CI runs
+check: pins-check lint docs-check types test release-check ## everything CI runs
 
 .PHONY: pins-check
 pins-check: ## the pins are exact and the lock agrees

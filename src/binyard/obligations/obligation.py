@@ -73,6 +73,8 @@ class ObligationKind(StrEnum):
 
 
 class ObligationStatus(StrEnum):
+    """Whether an obligation is still owed."""
+
     OPEN = "open"
     CLOSED = "closed"
     CANCELLED = "cancelled"

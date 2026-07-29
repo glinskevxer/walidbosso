@@ -74,6 +74,8 @@ class ReplyStore:
 
 
 class SqliteReplyStore(ReplyStore):
+    """Replies already sent, in one table with the key as its primary key."""
+
     def __init__(self, connection: sqlite3.Connection) -> None:
         self._connection = connection
 
@@ -110,6 +112,8 @@ class SqliteReplyStore(ReplyStore):
 
 
 class MemoryReplyStore(ReplyStore):
+    """Replies already sent, in a dictionary keyed by idempotency key."""
+
     def __init__(self, replies: dict[str, StoredReply] | None = None) -> None:
         self._replies: dict[str, StoredReply] = dict(replies or {})
 

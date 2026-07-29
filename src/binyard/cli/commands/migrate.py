@@ -13,6 +13,7 @@ __all__ = ["handle", "register"]
 
 
 def register(subparsers: argparse._SubParsersAction) -> None:
+    """Register this subcommand's parser and its handler."""
     parser = subparsers.add_parser(
         "migrate", help="apply any schema migrations the database has not seen"
     )
@@ -25,6 +26,7 @@ def register(subparsers: argparse._SubParsersAction) -> None:
 
 
 def handle(context: Context, arguments: argparse.Namespace) -> int:
+    """Run the command and return the exit code."""
     outstanding = pending(context.connection)
     if arguments.check:
         context.emit(_table(outstanding, "Outstanding migrations"))

@@ -30,6 +30,7 @@ __all__ = ["register"]
 
 
 def register(subparsers: argparse._SubParsersAction) -> None:
+    """Register this subcommand's parser and its handler."""
     parser = subparsers.add_parser("dryer", help="run the dryer")
     inner = parser.add_subparsers(dest="dryer_command", required=True)
 

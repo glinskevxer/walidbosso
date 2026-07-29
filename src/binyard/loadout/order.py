@@ -39,6 +39,8 @@ NO_MINIMUM: Final = Bushels.zero()
 
 
 class OrderStatus(StrEnum):
+    """Where a shipping order is in its life."""
+
     OPEN = "open"
     LOADING = "loading"
     COMPLETE = "complete"

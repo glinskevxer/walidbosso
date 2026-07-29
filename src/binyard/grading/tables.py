@@ -407,6 +407,7 @@ TABLES: Final[dict[str, GradeTable]] = {
 
 
 def table_for(commodity_code: str) -> GradeTable:
+    """The grade table for one crop, or a configuration error naming what is loaded."""
     try:
         return TABLES[commodity_code]
     except KeyError as exc:

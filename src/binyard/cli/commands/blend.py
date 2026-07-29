@@ -30,6 +30,7 @@ __all__ = ["build_spec", "handle", "register"]
 
 
 def register(subparsers: argparse._SubParsersAction) -> None:
+    """Register this subcommand's parser and its handler."""
     parser = subparsers.add_parser("blend", help="plan a draw list against a spec")
     parser.add_argument("--crop", required=True)
     parser.add_argument("--quantity", required=True, help="bushels wanted")
@@ -104,6 +105,7 @@ def build_spec(arguments: argparse.Namespace, commodity_code: str) -> BlendSpec:
 
 
 def handle(context: Context, arguments: argparse.Namespace) -> int:
+    """Run the command and return the exit code."""
     standard = lookup(arguments.crop)
     spec = build_spec(arguments, standard.code)
     work = context.work()

@@ -55,6 +55,7 @@ _PERCENT_FIELDS = (
 
 
 def as_date(value: str | date) -> date:
+    """Read a stored date, whatever shape the driver handed back."""
     return (
         value
         if isinstance(value, date) and not isinstance(value, datetime)
@@ -63,6 +64,7 @@ def as_date(value: str | date) -> date:
 
 
 def as_datetime(value: str | datetime | None) -> datetime | None:
+    """Read a stored timestamp, or ``None`` when the column is null."""
     if value is None:
         return None
     if isinstance(value, datetime):
@@ -71,6 +73,7 @@ def as_datetime(value: str | datetime | None) -> datetime | None:
 
 
 def sample_to_json(sample: FactorSample | None) -> str | None:
+    """Render a composite sample as the JSON a row carries, or ``None``."""
     if sample is None:
         return None
     payload: dict[str, Any] = {
@@ -83,6 +86,7 @@ def sample_to_json(sample: FactorSample | None) -> str | None:
 
 
 def sample_from_json(blob: str | None) -> FactorSample | None:
+    """Read a sample back, tolerating a key an older version did not write."""
     if blob is None:
         return None
     payload = json.loads(blob)
@@ -96,6 +100,7 @@ def sample_from_json(blob: str | None) -> FactorSample | None:
 
 
 def grade_to_json(result: GradeResult | None) -> str | None:
+    """Render a grade result, its sample, its limits and its notes."""
     if result is None:
         return None
     payload = {
@@ -117,6 +122,7 @@ def grade_to_json(result: GradeResult | None) -> str | None:
 
 
 def grade_from_json(blob: str | None) -> GradeResult | None:
+    """Read a grade result back whole."""
     if blob is None:
         return None
     payload = json.loads(blob)
@@ -140,6 +146,7 @@ def grade_from_json(blob: str | None) -> GradeResult | None:
 
 
 def shrink_to_json(result: ShrinkResult | None) -> str | None:
+    """Render a shrink result as its five exact counts."""
     if result is None:
         return None
     payload = {
@@ -153,6 +160,7 @@ def shrink_to_json(result: ShrinkResult | None) -> str | None:
 
 
 def shrink_from_json(blob: str | None) -> ShrinkResult | None:
+    """Read a shrink result back from its counts."""
     if blob is None:
         return None
     payload = json.loads(blob)
@@ -166,6 +174,7 @@ def shrink_from_json(blob: str | None) -> ShrinkResult | None:
 
 
 def history_to_json(history: tuple[TicketEvent, ...]) -> str:
+    """Render a ticket's audit trail as a list of events."""
     return json.dumps(
         [
             {
@@ -180,6 +189,7 @@ def history_to_json(history: tuple[TicketEvent, ...]) -> str:
 
 
 def history_from_json(blob: str | None) -> tuple[TicketEvent, ...]:
+    """Read an audit trail back, treating a missing blob as no history."""
     if not blob:
         return ()
     return tuple(
@@ -194,6 +204,7 @@ def history_from_json(blob: str | None) -> tuple[TicketEvent, ...]:
 
 
 def weights_to_row(weights: ScaleWeights) -> dict[str, Any]:
+    """Spread a weighing across the five columns the tickets table has."""
     return {
         "gross_hundredths": weights.gross.hundredths,
         "tare_hundredths": weights.tare.hundredths,
@@ -204,6 +215,7 @@ def weights_to_row(weights: ScaleWeights) -> dict[str, Any]:
 
 
 def weights_from_row(row: dict[str, Any]) -> ScaleWeights:
+    """Rebuild a weighing from a ticket row."""
     return ScaleWeights(
         gross=Weight(int(row["gross_hundredths"])),
         tare=Weight(int(row["tare_hundredths"])),

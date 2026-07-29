@@ -46,6 +46,13 @@ repos:
         pass_filenames: false
         files: ^tests/
 
+      - id: check-docs
+        name: every public name says what it does
+        entry: python scripts/check_docs.py
+        language: system
+        pass_filenames: false
+        files: ^src/binyard/
+
       - id: check-pins
         name: exact pins, and a lock that agrees
         entry: python scripts/check_pins.py

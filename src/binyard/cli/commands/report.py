@@ -34,6 +34,7 @@ __all__ = ["register"]
 
 
 def register(subparsers: argparse._SubParsersAction) -> None:
+    """Register this subcommand's parser and its handler."""
     parser = subparsers.add_parser("report", help="the standing reports")
     parser.add_argument("--out", help="write to this file instead of the terminal")
     parser.add_argument(

@@ -32,6 +32,8 @@ __all__ = ["Format", "Written", "suggested_name", "write_table"]
 
 
 class Format(StrEnum):
+    """How a report is rendered on its way to a file."""
+
     TEXT = "text"
     CSV = "csv"
     JSON = "json"

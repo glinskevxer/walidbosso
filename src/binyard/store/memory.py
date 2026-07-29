@@ -39,6 +39,8 @@ __all__ = [
 
 
 class MemoryTicketStore:
+    """Tickets in a dictionary, keyed by their printed number."""
+
     def __init__(self, tickets: dict[str, ScaleTicket] | None = None) -> None:
         self._tickets: dict[str, ScaleTicket] = dict(tickets or {})
 
@@ -91,6 +93,8 @@ class MemoryTicketStore:
 
 
 class MemoryObligationStore:
+    """Obligations in a dictionary, keyed by identifier."""
+
     def __init__(self, obligations: dict[str, StorageObligation] | None = None) -> None:
         self._obligations: dict[str, StorageObligation] = dict(obligations or {})
 
@@ -149,6 +153,8 @@ class MemoryObligationStore:
 
 
 class MemoryContractStore:
+    """Purchase contracts in a dictionary, keyed by identifier."""
+
     def __init__(self, contracts: dict[str, PurchaseContract] | None = None) -> None:
         self._contracts: dict[str, PurchaseContract] = dict(contracts or {})
 
@@ -193,6 +199,8 @@ class MemoryContractStore:
 
 
 class MemorySettlementStore:
+    """Settlements in a dictionary. Written once, never changed."""
+
     def __init__(self, settlements: dict[str, Settlement] | None = None) -> None:
         self._settlements: dict[str, Settlement] = dict(settlements or {})
 
@@ -222,6 +230,8 @@ class MemorySettlementStore:
 
 
 class MemoryYardStore:
+    """The yard, held whole, because it is one aggregate."""
+
     def __init__(self, yard: Yard | None = None) -> None:
         self._yard = yard if yard is not None else Yard()
 

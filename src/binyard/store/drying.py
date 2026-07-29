@@ -49,6 +49,8 @@ class DryerStore:
 
 
 class SqliteDryerStore(DryerStore):
+    """Dryer runs in one table, with fuel in thousandths of a gallon."""
+
     def __init__(self, connection: sqlite3.Connection) -> None:
         self._connection = connection
 
@@ -156,6 +158,8 @@ class SqliteDryerStore(DryerStore):
 
 
 class MemoryDryerStore(DryerStore):
+    """Dryer runs in a dictionary, keyed by run identifier."""
+
     def __init__(self, runs: dict[str, DryerRun] | None = None) -> None:
         self._runs: dict[str, DryerRun] = dict(runs or {})
 

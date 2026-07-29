@@ -55,6 +55,8 @@ class FeedLog:
 
 
 class SqliteFeedLog(FeedLog):
+    """Feed fingerprints in one table, with the fingerprint as the key."""
+
     def __init__(self, connection: sqlite3.Connection) -> None:
         self._connection = connection
 
@@ -113,6 +115,8 @@ class SqliteFeedLog(FeedLog):
 
 
 class MemoryFeedLog(FeedLog):
+    """Feed fingerprints in a dictionary, which is all the log needs to be."""
+
     def __init__(self, entries: dict[str, FeedEntry] | None = None) -> None:
         self._entries: dict[str, FeedEntry] = dict(entries or {})
 

@@ -176,18 +176,22 @@ REGISTRY = Registry()
 
 
 def counter(name: str, amount: float = 1.0, **labels: str) -> None:
+    """Add to a counter on the process registry."""
     REGISTRY.counter(name, amount, **labels)
 
 
 def gauge(name: str, value: float, **labels: str) -> None:
+    """Set a gauge on the process registry."""
     REGISTRY.gauge(name, value, **labels)
 
 
 def observe(name: str, seconds: float, **labels: str) -> None:
+    """Record a timing on the process registry."""
     REGISTRY.observe(name, seconds, **labels)
 
 
 def timed(name: str, **labels: str):
+    """Time the block and record it on the process registry."""
     return REGISTRY.timed(name, **labels)
 
 

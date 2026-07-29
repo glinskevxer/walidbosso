@@ -194,4 +194,5 @@ class Reader:
 
 
 def reader_for(body: Any) -> Reader:
+    """Wrap a decoded JSON body so its fields can be read by name."""
     return Reader(body)

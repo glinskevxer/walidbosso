@@ -35,6 +35,7 @@ __all__ = ["handle", "register"]
 
 
 def register(subparsers: argparse._SubParsersAction) -> None:
+    """Register this subcommand's parser and its handler."""
     parser = subparsers.add_parser("receive", help="take one load in")
     parser.add_argument("account", help="the grower or account the load is for")
     parser.add_argument("--crop", required=True, help="corn, beans, hrw and so on")
@@ -81,6 +82,7 @@ def register(subparsers: argparse._SubParsersAction) -> None:
 
 
 def handle(context: Context, arguments: argparse.Namespace) -> int:
+    """Run the command and return the exit code."""
     standard = commodity.lookup(arguments.crop)
     weights = ScaleWeights(
         gross=parse_weight(arguments.gross),

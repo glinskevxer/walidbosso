@@ -1,4 +1,14 @@
-"""``binyard bins``: add a bin, list them, look inside one."""
+"""``binyard bins``: add a bin, list them, look inside one.
+
+Registering a bin is the one piece of setup that has to happen before anything
+else works, because a load has to go somewhere. Everything about a bin is fixed
+for the season: its capacity, whether it is an upright or a ground pile, and
+which crops it may hold.
+
+``bins show`` prints the quality as well as the quantity, because the question
+somebody actually has at the bin board is not how many bushels are in there, it
+is what they will grade.
+"""
 
 from __future__ import annotations
 
@@ -16,6 +26,7 @@ __all__ = ["handle_add", "handle_list", "handle_show", "register"]
 
 
 def register(subparsers: argparse._SubParsersAction) -> None:
+    """Register this subcommand's parser and its handler."""
     parser = subparsers.add_parser("bins", help="bins and what is in them")
     inner = parser.add_subparsers(dest="bins_command", required=True)
 
@@ -45,6 +56,7 @@ def register(subparsers: argparse._SubParsersAction) -> None:
 
 
 def handle_add(context: Context, arguments: argparse.Namespace) -> int:
+    """Register a bin and print the yard back."""
     structure = Bin(
         identifier=arguments.identifier,
         name=arguments.name,
@@ -63,11 +75,13 @@ def handle_add(context: Context, arguments: argparse.Namespace) -> int:
 
 
 def handle_list(context: Context, arguments: argparse.Namespace) -> int:
+    """Print every bin and what it holds."""
     context.emit(bin_table(context.work().yard.load()))
     return 0
 
 
 def handle_show(context: Context, arguments: argparse.Namespace) -> int:
+    """Print one bin in detail, including its quality."""
     work = context.work()
     state = work.yard.load().state_of(arguments.identifier)
     described: dict[str, Any] = state.describe()

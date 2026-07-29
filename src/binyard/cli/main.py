@@ -40,6 +40,7 @@ _COMMANDS = (migrate, bins, receive, feed, dryer, blend, ship, settle, report)
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Assemble the whole command line, subcommands included."""
     parser = argparse.ArgumentParser(
         prog="binyard",
         description="Grain accounting for a country elevator.",
@@ -109,4 +110,5 @@ def run(
 
 
 def main() -> None:  # pragma: no cover - the console entry point
+    """The console script entry point. The only place this package exits."""
     sys.exit(run())

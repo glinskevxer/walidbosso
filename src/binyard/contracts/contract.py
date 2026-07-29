@@ -48,6 +48,8 @@ class PriceKind(StrEnum):
 
 
 class ContractStatus(StrEnum):
+    """Where a contract is in its life."""
+
     OPEN = "open"
     FILLED = "filled"
     CLOSED = "closed"

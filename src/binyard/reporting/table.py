@@ -30,6 +30,8 @@ __all__ = ["Align", "Column", "Table", "to_csv", "to_json", "to_text"]
 
 
 class Align(StrEnum):
+    """Which way a column sits."""
+
     LEFT = "left"
     RIGHT = "right"
 

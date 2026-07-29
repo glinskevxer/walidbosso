@@ -29,6 +29,7 @@ __all__ = ["routes"]
 
 
 def routes() -> list[Route]:
+    """The routes this module serves."""
     return [
         Route("/feed", accept, methods=["POST"], name="import_feed"),
         Route("/feed/{source}", history, methods=["GET"], name="feed_history"),

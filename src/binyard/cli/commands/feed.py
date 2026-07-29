@@ -29,6 +29,7 @@ __all__ = ["handle", "register"]
 
 
 def register(subparsers: argparse._SubParsersAction) -> None:
+    """Register this subcommand's parser and its handler."""
     parser = subparsers.add_parser("feed", help="import the scale house feed")
     parser.add_argument(
         "path", nargs="?", default="-", help="the feed file, or - for standard input"
@@ -56,6 +57,7 @@ def register(subparsers: argparse._SubParsersAction) -> None:
 
 
 def handle(context: Context, arguments: argparse.Namespace) -> int:
+    """Run the command and return the exit code."""
     text = sys.stdin.read() if arguments.path == "-" else _read(arguments.path)
     batch = read_feed(text)
 

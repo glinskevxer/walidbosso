@@ -62,6 +62,7 @@ _PURPOSE: dict[str, str] = {
 
 
 def routes() -> list[Route]:
+    """The routes this module serves."""
     return [Route("/", index, methods=["GET"], name="index")]
 
 

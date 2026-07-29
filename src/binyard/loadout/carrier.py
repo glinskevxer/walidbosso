@@ -41,6 +41,8 @@ __all__ = [
 
 
 class CarrierKind(StrEnum):
+    """What is being loaded, which decides how its limit is worked out."""
+
     TRUCK = "truck"
     RAIL_CAR = "rail_car"
     BARGE = "barge"
@@ -186,4 +188,5 @@ def capacity_bushels(carrier: Carrier, standard: CropStandard) -> Bushels:
 
 
 def fits(carrier: Carrier, standard: CropStandard, quantity: Bushels) -> bool:
+    """Whether this quantity is inside what the carrier may legally hold."""
     return to_weight(quantity, standard) <= capacity_for(carrier, standard).limit
