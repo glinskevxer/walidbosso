@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 
 from binyard.cli.context import Context
+from binyard.environment import inspect_environment
 from binyard.reporting.table import Column, Table
 from binyard.store.migrate import migrate as apply_migrations
 from binyard.store.migrate import pending
@@ -22,6 +23,11 @@ def register(subparsers: argparse._SubParsersAction) -> None:
         action="store_true",
         help="report what is outstanding and exit non zero if there is any",
     )
+    parser.add_argument(
+        "--environment",
+        action="store_true",
+        help="also report where the installed versions differ from the pins",
+    )
     parser.set_defaults(handler=handle)
 
 
@@ -35,6 +41,20 @@ def handle(context: Context, arguments: argparse.Namespace) -> int:
     context.emit(_table(applied, "Applied migrations"))
     context.say(f"{len(applied)} applied, database is up to date")
     return 0
+
+
+def _environment_table() -> Table:
+    """What is installed against what this build was pinned to."""
+    return Table(
+        title="Installed against pinned",
+        columns=(
+            Column("name", "Package"),
+            Column("declared", "Pinned"),
+            Column("found", "Installed"),
+            Column("note", "Note"),
+        ),
+        rows=tuple(item.describe() for item in inspect_environment()),
+    )
 
 
 def _table(migrations, title: str) -> Table:

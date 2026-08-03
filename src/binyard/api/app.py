@@ -14,6 +14,7 @@ leave nothing behind.
 from __future__ import annotations
 
 import sqlite3
+import sys
 from collections.abc import Callable
 
 from starlette.applications import Starlette
@@ -32,6 +33,7 @@ from binyard.api.security import (
 )
 from binyard.api.throttle import ThrottleMiddleware
 from binyard.config import Settings, load_settings
+from binyard.environment import check_python, drifted
 from binyard.observability.metrics import REGISTRY
 from binyard.store.migrate import pending
 from binyard.store.sqlite import SqliteUnitOfWork, connect
@@ -46,6 +48,7 @@ def create_app(
     connections: ConnectionFactory | None = None,
 ) -> Starlette:
     """Build the application. Everything it needs is an argument."""
+    check_python()
     resolved = settings or load_settings()
     factory = connections or _factory_for(resolved)
 
@@ -140,11 +143,16 @@ async def ready(request: Request) -> JSONResponse:
     try:
         outstanding = pending(work._connection)
         settings: Settings = request.app.state.settings
+        drift = drifted()
         payload = {
             "status": "ok" if not outstanding else "migrations_pending",
             "version": __version__,
             "location": str(settings.location),
+            "python": ".".join(str(part) for part in sys.version_info[:3]),
             "pending_migrations": [item.filename for item in outstanding],
+            # Reported, never fatal. An elevator that cannot weigh a truck
+            # because a library is a patch version out is worse than the drift.
+            "dependency_drift": [item.describe() for item in drift],
         }
         return JSONResponse(payload, status_code=200 if not outstanding else 503)
     finally:
