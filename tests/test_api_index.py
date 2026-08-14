@@ -105,7 +105,7 @@ class TestServiceLogs:
     def test_taking_a_load_logs_it_with_the_ticket_bound(self, client, logged):
         client.post("/tickets", json=load())
         received = [item for item in self.events(logged) if item["event"] == "load received"]
-        assert received
+        assert len(received) == 1
         assert received[0]["ticket"] == "WBS-25-000001"
         assert received[0]["commodity"] == "CORN"
         assert received[0]["net"].endswith("bu")
@@ -117,14 +117,14 @@ class TestServiceLogs:
             for item in self.events(logged)
             if item["event"] == "load turned away at the pit"
         ]
-        assert turned
+        assert len(turned) == 1
         assert turned[0]["moisture"] == "27%"
 
     def test_every_line_carries_the_request_id(self, client, logged):
         response = client.post("/tickets", json=load())
         request_id = response.headers["x-request-id"]
         lines = [item for item in self.events(logged) if "request_id" in item]
-        assert lines
+        assert len(lines) >= 1
         assert all(item["request_id"] == request_id for item in lines)
 
     def test_the_counters_move_when_a_load_is_taken(self, client):

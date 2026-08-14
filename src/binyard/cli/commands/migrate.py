@@ -1,4 +1,15 @@
-"""``binyard migrate``: bring the database up to the shipped schema."""
+"""``binyard migrate``: bring the database up to the shipped schema.
+
+Safe to run twice, and safe to run on start, because the runner applies only
+what the database has not seen and refuses anything that has been edited since
+it was applied. The container's entrypoint runs it every time it starts for
+exactly that reason.
+
+``--check`` reports what is outstanding and exits non zero if there is any,
+which is what a deployment gate wants. ``--environment`` also prints where the
+installed versions differ from the pins, because a migration that behaves
+strangely is usually a library that is not the one the build was tested with.
+"""
 
 from __future__ import annotations
 

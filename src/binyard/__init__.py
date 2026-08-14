@@ -16,8 +16,28 @@ database or a socket:
 Everything above is pure. ``binyard.store``, ``binyard.services``,
 ``binyard.api`` and ``binyard.cli`` sit on top and are the only places that
 touch the outside world.
+
+Version one means the shapes below are settled. The schema moves forward by
+migration and never sideways, the exact types keep their units, and a caller
+holding a :class:`~binyard.tickets.ticket.ScaleTicket` from this release will
+still be able to read it from the next one.
 """
 
-__all__ = ["__version__"]
+from binyard.environment import MINIMUM_PYTHON, check_python
+from binyard.errors import BinyardError
 
-__version__ = "0.1.0"
+__all__ = [
+    "MINIMUM_PYTHON",
+    "BinyardError",
+    "__version__",
+    "check_python",
+    "version_tuple",
+]
+
+__version__ = "1.0.0"
+
+
+def version_tuple() -> tuple[int, int, int]:
+    """The version as three numbers, for a caller comparing releases."""
+    major, minor, patch = __version__.split(".", 2)
+    return int(major), int(minor), int(patch.split("-")[0].split("a")[0].split("b")[0])

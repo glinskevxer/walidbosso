@@ -53,6 +53,19 @@ class Problem:
         return f"{self.check}: {self.detail}"
 
 
+def check_version_tuple() -> list[Problem]:
+    """The three number view has to agree with the string."""
+    parts = binyard.version_tuple()
+    if ".".join(str(part) for part in parts) != binyard.__version__.split("-")[0]:
+        return [
+            Problem(
+                "version",
+                f"version_tuple says {parts}, the string says {binyard.__version__}",
+            )
+        ]
+    return []
+
+
 def check_version() -> list[Problem]:
     declared = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
     problems: list[Problem] = []
@@ -169,6 +182,7 @@ def check_console_script() -> list[Problem]:
 
 CHECKS = (
     ("version", check_version),
+    ("version tuple", check_version_tuple),
     ("modules", check_modules),
     ("exports", check_exports),
     ("migrations", check_migrations),

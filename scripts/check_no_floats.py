@@ -23,13 +23,33 @@ from pathlib import Path
 ALLOWED_MODULES = {
     # Histogram bucket edges and elapsed seconds. Neither is money.
     "observability/metrics.py",
+    # A token bucket counts seconds and fractions of a token. Also not money,
+    # and a rate limiter that had to be exact would be a strange thing.
+    "api/throttle.py",
 }
+
+#: Calls whose float argument is on its way into a metric, which is a float by
+#: definition. Anything else converting an exact quantity to a float is the bug
+#: this check exists to find.
+METRIC_CALLS = {"counter", "gauge", "observe"}
+
+
+def _feeds_a_metric(node: ast.Call) -> bool:
+    return isinstance(node.func, ast.Attribute) and node.func.attr in METRIC_CALLS
 
 
 def offenders(path: Path, source: str) -> list[tuple[int, str]]:
     tree = ast.parse(source, filename=str(path))
+    excused: set[int] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and _feeds_a_metric(node):
+            for inner in ast.walk(node):
+                excused.add(id(inner))
+
     found: list[tuple[int, str]] = []
     for node in ast.walk(tree):
+        if id(node) in excused:
+            continue
         if isinstance(node, ast.Constant) and isinstance(node.value, float):
             found.append((node.lineno, repr(node.value)))
         if (

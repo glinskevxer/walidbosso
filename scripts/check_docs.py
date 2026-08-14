@@ -59,13 +59,16 @@ def _exported(tree: ast.Module) -> set[str]:
         if not isinstance(node, ast.Assign):
             continue
         for target in node.targets:
-            if isinstance(target, ast.Name) and target.id == "__all__":
-                if isinstance(node.value, ast.List | ast.Tuple):
-                    return {
-                        item.value
-                        for item in node.value.elts
-                        if isinstance(item, ast.Constant) and isinstance(item.value, str)
-                    }
+            if (
+                isinstance(target, ast.Name)
+                and target.id == "__all__"
+                and isinstance(node.value, ast.List | ast.Tuple)
+            ):
+                return {
+                    item.value
+                    for item in node.value.elts
+                    if isinstance(item, ast.Constant) and isinstance(item.value, str)
+                }
     return set()
 
 

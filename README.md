@@ -75,6 +75,14 @@ single location. `BINYARD_API_KEY` turns on key checking for everything except
 the health probes. The full set is in `src/binyard/config.py`, and an
 unparseable value stops the process at startup rather than becoming a zero.
 
+## Version one
+
+The shapes are settled. The schema moves forward by migration and never
+sideways; the exact types keep their units; a ticket written by this release
+reads back under the next one. `scripts/check_release.py` refuses a tree whose
+version, exports, migrations, schema and console script do not all agree, and
+CI refuses a tag that does not match the version in the tree.
+
 ## Conventions worth knowing before reading the code
 
 - **Nothing mutates.** Tickets, contracts, obligations and the yard are frozen;
