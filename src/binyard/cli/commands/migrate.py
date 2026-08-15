@@ -14,12 +14,14 @@ strangely is usually a library that is not the one the build was tested with.
 from __future__ import annotations
 
 import argparse
+from typing import Any
 
 from binyard.cli.context import Context
 from binyard.environment import inspect_environment
 from binyard.reporting.table import Column, Table
 from binyard.store.migrate import migrate as apply_migrations
 from binyard.store.migrate import pending
+from binyard.store.sqlite import durability
 
 __all__ = ["handle", "register"]
 
@@ -52,6 +54,22 @@ def handle(context: Context, arguments: argparse.Namespace) -> int:
     context.emit(_table(applied, "Applied migrations"))
     context.say(f"{len(applied)} applied, database is up to date")
     return 0
+
+
+def _durability_table(context: Context) -> Table:
+    """What a power cut would cost against this database, in words."""
+    described: dict[str, Any] = durability(context.connection).describe()
+    rows: list[dict[str, Any]] = [
+        {"field": "journal mode", "value": described["journal_mode"]},
+        {"field": "synchronous", "value": described["synchronous"]},
+        {"field": "foreign keys", "value": "on" if described["foreign_keys"] else "off"},
+        {"field": "note", "value": described["note"]},
+    ]
+    return Table(
+        title="Durability",
+        columns=(Column("field", "Setting"), Column("value", "Value")),
+        rows=tuple(rows),
+    )
 
 
 def _environment_table() -> Table:

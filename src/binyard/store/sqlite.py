@@ -19,11 +19,21 @@ bookkeeping needed to do it incrementally and correctly.
 **Foreign keys are turned on per connection.** SQLite has them off by default,
 and a schema full of REFERENCES clauses that are never enforced is worse than
 one with none, because it reads as though somebody checked.
+
+**Journal mode is WAL and synchronous is NORMAL, together.** WAL on its own
+leaves synchronous at FULL, which fsyncs on every commit, and that pairing is
+the worst of both: a migration run measured at one and a quarter seconds
+waiting on the disk against twelve milliseconds without it. NORMAL is the mode
+SQLite documents as safe alongside WAL. It cannot corrupt the database; the
+exposure is that a power cut can lose the last transactions that had not
+reached the disk, which for a scale house is one ticket to re-weigh rather
+than a season that cannot be read.
 """
 
 from __future__ import annotations
 
 import sqlite3
+from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -70,7 +80,61 @@ from binyard.store.orders import SqliteOrderStore
 from binyard.store.replies import SqliteReplyStore
 from binyard.tickets.ticket import ScaleTicket, TicketKind, TicketStatus
 
-__all__ = ["SqliteUnitOfWork", "connect"]
+__all__ = ["Durability", "SqliteUnitOfWork", "connect", "durability"]
+
+
+#: What ``PRAGMA synchronous`` returns, in words an operator can read.
+_SYNCHRONOUS = {0: "off", 1: "normal", 2: "full", 3: "extra"}
+
+
+@dataclass(frozen=True, slots=True)
+class Durability:
+    """The three settings that decide what a power cut can cost."""
+
+    journal_mode: str
+    synchronous: str
+    foreign_keys: bool
+
+    @property
+    def can_corrupt(self) -> bool:
+        """Whether this pairing risks a database that will not open again.
+
+        WAL with synchronous off is the one combination that can. Everything
+        else risks losing recent transactions and nothing worse, which is why
+        this is a separate question from how fast it is.
+        """
+        return self.journal_mode == "wal" and self.synchronous == "off"
+
+    @property
+    def note(self) -> str:
+        """What that pairing means, for somebody who does not read pragmas."""
+        if self.can_corrupt:
+            return "a power cut could leave this database unreadable"
+        if self.synchronous == "full":
+            return "every commit waits on the disk, which is slow and very safe"
+        return "safe against corruption; a power cut can lose the last commits"
+
+    def describe(self) -> dict[str, object]:
+        """The settings and the plain reading of them, for a report."""
+        return {
+            "journal_mode": self.journal_mode,
+            "synchronous": self.synchronous,
+            "foreign_keys": self.foreign_keys,
+            "can_corrupt": self.can_corrupt,
+            "note": self.note,
+        }
+
+
+def durability(connection: sqlite3.Connection) -> Durability:
+    """Read back what this connection is running, not what it was asked for."""
+    journal = str(connection.execute("PRAGMA journal_mode").fetchone()[0]).lower()
+    raw = int(connection.execute("PRAGMA synchronous").fetchone()[0])
+    keys = bool(connection.execute("PRAGMA foreign_keys").fetchone()[0])
+    return Durability(
+        journal_mode=journal,
+        synchronous=_SYNCHRONOUS.get(raw, str(raw)),
+        foreign_keys=keys,
+    )
 
 
 def connect(
@@ -81,6 +145,7 @@ def connect(
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
     connection.execute("PRAGMA journal_mode = WAL")
+    connection.execute("PRAGMA synchronous = NORMAL")
     if run_migrations:
         migrate(connection)
     return connection

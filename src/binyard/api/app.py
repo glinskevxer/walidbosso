@@ -36,7 +36,7 @@ from binyard.config import Settings, load_settings
 from binyard.environment import check_python, drifted
 from binyard.observability.metrics import REGISTRY
 from binyard.store.migrate import pending
-from binyard.store.sqlite import SqliteUnitOfWork, connect
+from binyard.store.sqlite import SqliteUnitOfWork, connect, durability
 
 __all__ = ["ConnectionFactory", "create_app"]
 
@@ -153,6 +153,7 @@ async def ready(request: Request) -> JSONResponse:
             # Reported, never fatal. An elevator that cannot weigh a truck
             # because a library is a patch version out is worse than the drift.
             "dependency_drift": [item.describe() for item in drift],
+            "durability": durability(work._connection).describe(),
         }
         return JSONResponse(payload, status_code=200 if not outstanding else 503)
     finally:

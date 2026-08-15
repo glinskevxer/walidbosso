@@ -24,6 +24,7 @@ from binyard.percent import percent
 from binyard.settlement import ChargeKind, SettlementBuilder
 from binyard.store import MemoryUnitOfWork, SqliteUnitOfWork
 from binyard.store.protocol import ContractStore, ObligationStore, TicketStore
+from binyard.store.sqlite import Durability, connect, durability
 from conftest import LOCATION, bin_for, graded_ticket, sample_for, ticket_for
 
 DAY = date(2025, 10, 14)
@@ -356,6 +357,71 @@ class TestTransactions:
             work.obligations.add(obligation())
             work.commit()
         assert len(work.obligations.all_open()) == 1
+
+
+class TestDurability:
+    """WAL on its own leaves synchronous at FULL, which fsyncs on every commit.
+
+    That pairing cost a second and a quarter on a seven migration run and was
+    most of the test suite. These pin the settings so it cannot come back.
+    """
+
+    def test_a_connection_does_not_fsync_every_commit(self, tmp_path):
+        connection = connect(tmp_path / "b.sqlite3")
+        try:
+            settings = durability(connection)
+            assert settings.journal_mode == "wal"
+            assert settings.synchronous == "normal"
+            assert settings.foreign_keys
+        finally:
+            connection.close()
+
+    def test_the_settings_that_are_asked_for_are_the_ones_that_stick(self, tmp_path):
+        connection = connect(tmp_path / "b.sqlite3")
+        try:
+            raw = connection.execute("PRAGMA synchronous").fetchone()[0]
+            assert raw == 1
+        finally:
+            connection.close()
+
+    def test_this_pairing_cannot_corrupt(self, tmp_path):
+        connection = connect(tmp_path / "b.sqlite3")
+        try:
+            settings = durability(connection)
+            assert not settings.can_corrupt
+            assert "cannot" not in settings.note
+            assert "lose the last commits" in settings.note
+        finally:
+            connection.close()
+
+    def test_wal_with_synchronous_off_is_the_one_that_can(self):
+        risky = Durability(journal_mode="wal", synchronous="off", foreign_keys=True)
+        assert risky.can_corrupt
+        assert "unreadable" in risky.note
+
+    def test_full_is_called_out_as_slow_rather_than_unsafe(self):
+        careful = Durability(journal_mode="wal", synchronous="full", foreign_keys=True)
+        assert not careful.can_corrupt
+        assert "waits on the disk" in careful.note
+
+    def test_it_renders_for_an_operator(self, tmp_path):
+        connection = connect(tmp_path / "b.sqlite3")
+        try:
+            described = durability(connection).describe()
+            assert described["synchronous"] == "normal"
+            assert described["can_corrupt"] is False
+        finally:
+            connection.close()
+
+    def test_migrating_a_fresh_database_is_not_dominated_by_the_disk(self, tmp_path):
+        import time
+
+        connect(tmp_path / "warm.sqlite3").close()  # pay the import cost first
+        started = time.perf_counter()
+        connect(tmp_path / "fresh.sqlite3").close()
+        # It was 1.25s with synchronous at FULL. A second is generous and still
+        # an order of magnitude under what the old pairing cost.
+        assert time.perf_counter() - started < 1.0
 
 
 def test_sqlite_enforces_the_foreign_keys():
